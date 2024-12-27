@@ -1,0 +1,55 @@
+{{define "page:title"}}Added Tasks{{end}}
+
+{{define "page:main"}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
+            Added Tasks
+        </h1>
+        <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">
+            Overview of recently added tasks and their details.
+        </p>
+    </div>
+
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+            <tr>
+                <th scope="col" class="px-6 py-3">Job ID</th>
+                <th scope="col" class="px-6 py-3">Name</th>
+                <th scope="col" class="px-6 py-3">Next Run</th>
+                <th scope="col" class="px-6 py-3">Tags</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Result}}
+            <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                    {{if .ID}}{{.ID}}{{else}}<span class="text-gray-400">No ID</span>{{end}}
+                </td>
+                <td class="px-6 py-4">
+                    {{if .Name}}{{.Name}}{{else}}<span class="text-gray-400">Unnamed</span>{{end}}
+                </td>
+                <td class="px-6 py-4">
+                    {{if .NextRun}}{{.NextRun}}{{else}}<span class="text-gray-400">Not scheduled</span>{{end}}
+                </td>
+                <td class="px-6 py-4">
+                    {{if .Tags}}
+                    <div class="flex flex-wrap gap-2">
+                        {{range .Tags}}
+                        <span class="px-2 py-1 text-xs font-medium leading-tight text-blue-700 bg-blue-100 rounded-full dark:bg-blue-700 dark:text-blue-100">
+                    {{.}}
+                  </span>
+                        {{end}}
+                    </div>
+                    {{else}}
+                    <span class="text-gray-400">No tags</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

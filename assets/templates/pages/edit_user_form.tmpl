@@ -1,0 +1,97 @@
+{{define "page:title"}}Editing User: {{.Form.Username}}{{end}}
+
+{{define "page:main"}}
+<div class="max-w-sm mx-auto relative z-0 w-full mb-5 mt-5">
+    <h1 class="text-3xl font-extrabold dark:text-white">Editing User: {{.Form.Username}}</h1>
+</div>
+<form action="/user/edit/{{.ID}}" method="POST" class="max-w-sm mx-auto">
+    <input type="hidden" name="csrf_token" value="{{.Token}}">
+
+    <!-- Username Field -->
+    <div class="relative z-0 w-full mb-5 group">
+        <label for="username"
+               {{if not .Form.Validator.FieldErrors.Username}}
+               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+               {{else}}
+               class="block mb-2 text-sm font-medium text-red-700 dark:text-red-500"
+               {{end}}
+        >
+            Username:
+        </label>
+        {{with .Form.Validator.FieldErrors.Username}}
+        <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+        {{end}}
+        <input
+                type="text"
+                id="username"
+                name="username"
+                value="{{.Form.Username}}"
+                class="{{if not .Form.Validator.FieldErrors.Username}}bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500{{else}}bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 dark:bg-gray-700 focus:border-red-500 block w-full p-2.5 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500{{end}}"
+        >
+        <p id="helper-text-node-name" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Username for this user</p>
+    </div>
+
+    <!-- Password Field -->
+    </label>
+    <div class="relative z-0 w-full mb-5 group">
+        <label for="password"
+               {{if not .Form.Validator.FieldErrors.Password}}
+               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+               {{else}}
+               class="block mb-2 text-sm font-medium text-red-700 dark:text-red-500"
+               {{end}}
+        >
+            Password:
+        </label>
+        {{with .Form.Validator.FieldErrors.Password}}
+        <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+        {{end}}
+        <input
+                type="password"
+                id="password"
+                name="password"
+                value="{{.Form.Password}}"
+                class="{{if not .Form.Validator.FieldErrors.Password}}bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500{{else}}bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 dark:bg-gray-700 focus:border-red-500 block w-full p-2.5 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500{{end}}"
+        >
+        <p id="helper-text-password" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Password for this user <i>(leave it empty if you don't want to change it)</i></p>
+    </div>
+
+    <!-- Password Confirmation Field -->
+
+    <div class="relative z-0 w-full mb-5 group">
+
+        <label for="password_confirm"
+               {{if not .Form.Validator.FieldErrors.PasswordConfirm}}
+               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+               {{else}}
+               class="block mb-2 text-sm font-medium text-red-700 dark:text-red-500"
+               {{end}}
+        >
+            Password confirmation:
+        </label>
+        {{with .Form.Validator.FieldErrors.PasswordConfirm}}
+        <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+        {{end}}
+        <input
+                type="password"
+                id="password_confirm"
+                name="password_confirm"
+                value=""
+                class="{{if not .Form.Validator.FieldErrors.PasswordConfirm}}bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500{{else}}bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 dark:bg-gray-700 focus:border-red-500 block w-full p-2.5 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500{{end}}"
+        >
+        <p id="helper-text-password_confirm" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Confirm the password selected above <i>(leave it empty if you did not change it)</i></p>
+    </div>
+
+    <!-- Grant Admin Privileges -->
+    <div class="flex items-center mb-4">
+        <input type="checkbox" id="grant_admin" {{if .IsAdmin}}checked{{end}} name="grant_admin" value="true" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+        <label for="grant_admin" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Grant Admin Privileges to this user</label>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit"
+            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+        Save Edited User
+    </button>
+</form>
+{{end}}

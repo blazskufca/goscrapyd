@@ -1,0 +1,54 @@
+{{define "page:title"}}Fire Spider Result{{end}}
+
+{{define "page:main"}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
+            Fire Spider Result
+        </h1>
+        <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">
+            Overview of the fired spider jobs and their status.
+        </p>
+    </div>
+
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+            <tr>
+                <th scope="col" class="px-6 py-3">Job ID</th>
+                <th scope="col" class="px-6 py-3">Name</th>
+                <th scope="col" class="px-6 py-3">Status</th>
+                <th scope="col" class="px-6 py-3">Visit Node</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Result}}
+            <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                    {{if .ID}}{{.ID}}{{else}}<span class="text-gray-400">No ID</span>{{end}}
+                </td>
+                <td class="px-6 py-4">
+                    {{if .Name}}{{.Name}}{{else}}<span class="text-gray-400">No name</span>{{end}}
+                </td>
+                <td class="px-6 py-4">
+                    {{if .Error}}
+                    <span class="px-2 py-1 font-semibold leading-tight text-red-700 bg-red-100 rounded-full dark:bg-red-700 dark:text-red-100">
+                Error
+              </span>
+                    {{else}}
+                    <span class="px-2 py-1 font-semibold leading-tight text-green-700 bg-green-100 rounded-full dark:bg-green-700 dark:text-green-100">
+                OK
+              </span>
+                    {{end}}
+                </td>
+                <td class="px-6 py-4">
+                    <a class="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors duration-300" type="button"
+                       href="/{{.Node}}/jobs">Visit node {{.Node}}</a>
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

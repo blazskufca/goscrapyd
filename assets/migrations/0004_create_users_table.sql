@@ -1,0 +1,11 @@
+-- +goose Up
+CREATE TABLE IF NOT EXISTS users (
+    ID UUID NOT NULL UNIQUE PRIMARY KEY,
+    created_at DATETIME NOT NULL NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    username VARCHAR(20) NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    has_admin_privileges BOOL NOT NULL DEFAULT FALSE
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS users;

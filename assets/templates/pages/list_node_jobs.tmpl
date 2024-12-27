@@ -1,0 +1,111 @@
+{{define "page:title"}}{{.NodeName}} Tasks{{end}}
+
+{{define "page:main"}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 space-y-4 sm:space-y-0">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">All jobs on {{.NodeName}}</h1>
+        <div class="flex flex-wrap gap-2">
+            <a href="/fire-spider" class="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors duration-300">
+                Add One Time Job
+            </a>
+            <a href="/add-task" class="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors duration-300">
+                Add A Scheduled Task
+            </a>
+        </div>
+    </div>
+
+    <div class="relative mb-4">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+            </svg>
+        </div>
+        <input
+                class="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-all duration-300 ease-in-out"
+                type="search"
+                name="searchTerm"
+                placeholder="Begin Typing To Search Existing Jobs"
+                hx-post="/{{.NodeName}}/job/search"
+                hx-trigger="input changed delay:500ms, searchTerm"
+                hx-target="#table_body"
+        >
+    </div>
+
+    <div class="overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full table-auto text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Project</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Spider</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Job ID</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Status</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Deleted</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Start Time</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Update Time</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Run Time</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Actions</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Items</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Pages</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Started By</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Stopped By</th>
+            </tr>
+            </thead>
+            <tbody id="table_body">
+                {{template "htmx:jobsTable" .}}
+            </tbody>
+        </table>
+    </div>
+    <div class="flex justify-between items-center mt-6">
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+            Showing <span class="font-semibold text-gray-900 dark:text-white">{{.CurrentPage}}-{{.TotalPages}}</span> of <span class="font-semibold text-gray-900 dark:text-white">{{.TotalPages}}</span> pages.
+        </span>
+        <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm">
+            {{if .PrevPage}}
+            <li>
+                <a href="?page={{.PrevPage}}" class="flex items-center justify-center px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                    Previous
+                </a>
+            </li>
+            {{else}}
+            <li>
+                    <span class="flex items-center justify-center px-3 py-2 text-gray-500 bg-gray-100 border border-gray-300 rounded-l-lg cursor-not-allowed">
+                        Previous
+                    </span>
+            </li>
+            {{end}}
+            {{range .PaginationPages}}
+            <li>
+                {{if eq . $.CurrentPage}}
+                <a href="?page={{.}}" class="flex items-center justify-center px-3 py-2 text-blue-600 bg-blue-50 border border-gray-300 hover:bg-blue-100 dark:bg-gray-700 dark:border-gray-700 dark:text-white">{{.}}</a>
+                {{else}}
+                <a href="?page={{.}}" class="flex items-center justify-center px-3 py-2 text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">{{.}}</a>
+                {{end}}
+            </li>
+            {{end}}
+            {{if .NextPage}}
+            <li>
+                <a href="?page={{.NextPage}}" class="flex items-center justify-center px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                    Next
+                </a>
+            </li>
+            {{else}}
+            <li>
+                    <span class="flex items-center justify-center px-3 py-2 text-gray-500 bg-gray-100 border border-gray-300 rounded-r-lg cursor-not-allowed">
+                        Next
+                    </span>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+</div>
+<script>
+    function initFlowbite() {
+        if (typeof flowbite !== 'undefined') {
+            flowbite.initFlowbite();
+        }
+    }
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        initFlowbite();
+    });
+</script>
+{{end}}

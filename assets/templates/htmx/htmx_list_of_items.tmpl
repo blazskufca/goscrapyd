@@ -1,0 +1,6 @@
+{{define "htmx:listOfItems"}}
+<option value="">{{.Placeholder}}</option>
+{{ range .Values }}
+<option value="{{.}}">{{.}}</option>
+{{end}}
+{{end}}

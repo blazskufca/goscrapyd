@@ -1,0 +1,163 @@
+{{define "page:title"}}Edit Settings{{end}}
+
+{{define "page:main"}}
+<div class="max-w-sm mx-auto relative z-0 w-full mb-5 mt-5">
+    <h1 class="text-3xl font-extrabold dark:text-white">Edit Settings:</h1>
+</div>
+<form action="/edit-settings" method="POST" class="max-w-full mx-auto" id="settings_form">
+    <input type="hidden" name="csrf_token" value="{{.Token}}">
+
+    <!-- Project Path Field -->
+    <div class="relative z-0 w-full mb-5 group">
+        <label for="project_path" class="block mb-2 text-sm font-medium {{if .Form.Validator.FieldErrors.ProjectPath}}text-red-700 dark:text-red-500{{else}}text-gray-900 dark:text-white{{end}}">
+            Project Path:
+        </label>
+        {{with .Form.Validator.FieldErrors.ProjectPath}}
+        <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+        {{end}}
+        <input
+                type="text"
+                id="project_path"
+                name="project_path"
+                value="{{.ProjectPath}}"
+                class="{{if .Form.Validator.FieldErrors.ProjectPath}}
+                bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 dark:bg-gray-700 focus:border-red-500 block w-full p-2.5 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500
+            {{else}}
+                bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
+            {{end}}"
+        >
+        <p id="helper-text-project-path" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Default path used when deploying a new version.</p>
+    </div>
+
+    <!-- Project Name Field -->
+    <div class="relative z-0 w-full mb-5 group">
+        <label for="project_name" class="block mb-2 text-sm font-medium {{if .Form.Validator.FieldErrors.ProjectName}}text-red-700 dark:text-red-500{{else}}text-gray-900 dark:text-white{{end}}">
+            Project Name:
+        </label>
+        {{with .Form.Validator.FieldErrors.ProjectName}}
+        <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+        {{end}}
+        <input
+                type="text"
+                id="project_name"
+                name="project_name"
+                value="{{.ProjectName}}"
+                class="{{if .Form.Validator.FieldErrors.ProjectName}}
+                bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 dark:bg-gray-700 focus:border-red-500 block w-full p-2.5 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500
+            {{else}}
+                bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500
+            {{end}}"
+        >
+        <p id="helper-text-node-name" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Default name for your project when deployed</p>
+    </div>
+
+    <!-- Spider Settings Section -->
+    <div>
+        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Additional Arguments:</label>
+        <div id="default_settings" class="space-y-4">
+            {{range $key, $values := .Settings}}
+            {{range $index, $value := $values}}
+            <div class="flex items-center space-x-2 mb-2 argument-row">
+                <div class="flex-grow">
+                    <input
+                            type="text"
+                            class="arg-key block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            placeholder="Argument Name"
+                            value="{{$key}}"
+                            required
+                    >
+                </div>
+                <div class="flex-grow">
+                    <input
+                            type="text"
+                            class="arg-value block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            placeholder="Argument Value"
+                            value="{{$value}}"
+                    >
+                </div>
+                <div>
+                    <button
+                            type="button"
+                            onclick="removeArgument(this)"
+                            class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600"
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+            {{end}}
+            {{end}}
+        </div>
+        <button type="button" onclick="addArgument()" class="mt-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-600">
+            Add Argument
+        </button>
+    </div>
+
+    <button
+            type="submit"
+            class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+    >
+        Save Settings
+    </button>
+</form>
+
+<script>
+    function addArgument() {
+        const container = document.getElementById('default_settings');
+        const newArgumentDiv = document.createElement('div');
+        newArgumentDiv.className = 'flex items-center space-x-2 mb-2 argument-row';
+
+        newArgumentDiv.innerHTML = `
+            <div class="flex-grow">
+                <input
+                    type="text"
+                    class="arg-key block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    placeholder="Argument Name"
+                    required
+                >
+            </div>
+            <div class="flex-grow">
+                <input
+                    type="text"
+                    class="arg-value block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    placeholder="Argument Value"
+                >
+            </div>
+            <div>
+                <button
+                    type="button"
+                    onclick="removeArgument(this)"
+                    class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600"
+                >
+                    Remove
+                </button>
+            </div>
+        `;
+
+        container.appendChild(newArgumentDiv);
+    }
+
+    function removeArgument(button) {
+        const argumentRow = button.closest('.argument-row');
+        argumentRow.remove();
+    }
+
+    // Modify form submission to include dynamic arguments
+    document.getElementById('settings_form').addEventListener('submit', function(e) {
+        const argumentRows = document.querySelectorAll('.argument-row');
+
+        argumentRows.forEach(row => {
+            const keyInput = row.querySelector('.arg-key');
+            const valueInput = row.querySelector('.arg-value');
+
+            if (keyInput.value.trim()) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = keyInput.value;
+                hiddenInput.value = valueInput.value || '';
+                this.appendChild(hiddenInput);
+            }
+        });
+    });
+</script>
+{{end}}

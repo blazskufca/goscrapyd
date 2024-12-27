@@ -1,0 +1,63 @@
+{{define "page:title"}}Users{{end}}
+
+{{define "page:main"}}
+<div class="container mx-auto px-4 py-8">
+    <div class="sm:flex sm:items-center sm:justify-between mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-4 sm:mb-0">
+            Users
+        </h1>
+        <a href="/add-user" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+            </svg>
+            Add new user
+        </a>
+    </div>
+
+    <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+                <th scope="col" class="py-3 px-6">ID</th>
+                <th scope="col" class="py-3 px-6">Username</th>
+                <th scope="col" class="py-3 px-6">Admin privileges</th>
+                <th scope="col" class="py-3 px-6">Created at</th>
+                <th scope="col" class="py-3 px-6">Actions</th>
+            </tr>
+            </thead>
+            <tbody hx-target="closest tr" hx-swap="outerHTML">
+            {{range .Users}}
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {{if .ID}}{{.ID}}{{else}}-{{end}}
+                </th>
+                <td class="py-4 px-6">
+                    {{if .Username}}{{.Username}}{{else}}-{{end}}
+                </td>
+                <td class="py-4 px-6">
+                    {{if .HasAdminPrivileges}}
+                    <span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Yes</span>
+                    {{else}}
+                    <span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">No</span>
+                    {{end}}
+                </td>
+                <td class="py-4 px-6">
+                    {{if .CreatedAt}}{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}{{else}}-{{end}}
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300" type="button" hx-delete="/user/delete/{{.ID}}" hx-target="closest tr" hx-swap="outerHTML">
+                            Delete
+                        </button>
+                        <a class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors duration-300" href="/user/edit/{{.ID}}">
+                            Edit
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

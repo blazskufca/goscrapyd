@@ -1,0 +1,36 @@
+{{define "base"}}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{template "page:title"}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/ui/static/css/flowbite.min.css" rel="stylesheet" />
+    <script src="/ui/static/js/htmx.min.js" ></script>
+    <script src="/ui/static/js/htmx_sse.js"></script>
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+    <header>
+        {{ if .AuthenticatedUser }}
+    {{template "partial:nav" .}}
+    {{template "partial:sidebar" .}}
+        {{ end }}
+    </header>
+    <main class="p-4 pt-20 sm:ml-64">
+        {{template "page:main" .}}
+    </main>
+    <script src="/ui/static/js/theme_switcher.js"></script>
+    <script src="/ui/static/js/flowbite.min.js"></script>
+    {{ if .AuthenticatedUser }}
+    <script src="/ui/static/js/sidebar_search.js"></script>
+    {{ end }}
+</body>
+</html>
+{{end}}

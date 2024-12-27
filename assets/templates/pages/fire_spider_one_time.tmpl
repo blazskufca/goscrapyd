@@ -1,0 +1,206 @@
+{{define "page:title"}}Fire Spider{{end}}
+
+{{define "page:main"}}
+<div class="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">Fire Spider</h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Select the details below to fire a spider.</p>
+    </div>
+
+    <div>
+        <label for="nodeSelect" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Node</label>
+        <select
+                id="nodeSelect"
+                name="node"
+                hx-get="/htmx-fire-form"
+                hx-target="#projectSelect"
+                hx-trigger="change[this.value != '' && target.value != '']"
+                class="block w-full px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+        >
+            <option value="">Select Node</option>
+            {{range .Nodes}}
+            <option value="{{.Nodename}}">{{.Nodename}}</option>
+            {{end}}
+        </select>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Select one of your nodes to list projects and spiders.</p>
+    </div>
+
+    <form action="/fire-spider" method="POST" id="fire_form" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{.Token}}">
+        <div>
+            <label for="projectSelect" class="block mb-2 text-sm font-medium {{ if .Form.Validator.FieldErrors.project }}text-red-700 dark:text-red-500{{ else }}text-gray-700 dark:text-gray-300{{ end }}">Project</label>
+            <select
+                    id="projectSelect"
+                    name="project"
+                    hx-get="/htmx-fire-form"
+                    hx-target="#spiderSelect"
+                    hx-include="#nodeSelect"
+                    hx-trigger="change[this.value != '' && target.value != '' && document.getElementById('nodeSelect').value != '']"
+                    class="block w-full px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 {{ if .Form.Validator.FieldErrors.project }}border-red-500 text-red-900 dark:border-red-500{{ end }}"
+            >
+                <option value="">Select project</option>
+            </select>
+            {{with .Form.Validator.FieldErrors.project}}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+            {{end}}
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Select your project</p>
+        </div>
+
+        <div>
+            <label for="spiderSelect" class="block mb-2 text-sm font-medium {{ if .Form.Validator.FieldErrors.spider }}text-red-700 dark:text-red-500{{ else }}text-gray-700 dark:text-gray-300{{ end }}">Spiders</label>
+            <select
+                    id="spiderSelect"
+                    name="spider"
+                    class="block w-full px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 {{ if .Form.Validator.FieldErrors.spider }}border-red-500 text-red-900 dark:border-red-500{{ end }}"
+            >
+                <option value="">Select spider</option>
+            </select>
+            {{with .Form.Validator.FieldErrors.spider}}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+            {{end}}
+        </div>
+
+        <div>
+            <label for="fireNode" class="block mb-2 text-sm font-medium {{ if .Form.Validator.FieldErrors.node }}text-red-700 dark:text-red-500{{ else }}text-gray-700 dark:text-gray-300{{ end }}">Fire Nodes</label>
+            <div class="flex space-x-2 mb-2">
+                <button type="button" onclick="selectAllOptions()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600">
+                    Select All
+                </button>
+                <button type="button" onclick="deselectAllOptions()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-700">
+                    Deselect All
+                </button>
+            </div>
+            <select multiple id="fireNode" name="fireNode" class="block w-full px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 {{ if .Form.Validator.FieldErrors.node }}border-red-500 text-red-900 dark:border-red-500{{ end }}">
+                {{range .Nodes}}
+                <option value="{{.Nodename}}">{{.Nodename}}</option>
+                {{end}}
+            </select>
+            {{with .Form.Validator.FieldErrors.node}}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500"><span>{{.}}</span></p>
+            {{end}}
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Select one or more nodes to fire the task</p>
+        </div>
+
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Additional Arguments:</label>
+            <div id="extra-arguments" class="space-y-4">
+                {{if .PreconfiguredSettings}}
+                {{range $key, $values := .PreconfiguredSettings}}
+                {{range $index, $value := $values}}
+                <div class="flex items-center space-x-2 mb-2 argument-row">
+                    <div class="flex-grow">
+                        <input
+                                type="text"
+                                class="arg-key block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                placeholder="Argument Name"
+                                value="{{$key}}"
+                                required
+                        >
+                    </div>
+                    <div class="flex-grow">
+                        <input
+                                type="text"
+                                class="arg-value block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                placeholder="Argument Value"
+                                value="{{$value}}"
+                        >
+                    </div>
+                    <div>
+                        <button
+                                type="button"
+                                onclick="removeArgument(this)"
+                                class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600"
+                        >
+                            Remove
+                        </button>
+                    </div>
+                </div>
+                {{end}}
+                {{end}}
+                {{end}}
+            </div>
+            <button type="button" onclick="addArgument()" class="mt-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-600">
+                Add Argument
+            </button>
+        </div>
+
+        <button type="submit" class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600">
+            Fire Spider
+        </button>
+    </form>
+</div>
+
+<script>
+    function selectAllOptions() {
+        const selectElement = document.getElementById('fireNode');
+        for (let option of selectElement.options) {
+            option.selected = true;
+        }
+    }
+
+    function deselectAllOptions() {
+        const selectElement = document.getElementById('fireNode');
+        for (let option of selectElement.options) {
+            option.selected = false;
+        }
+    }
+
+    function addArgument() {
+        const container = document.getElementById('extra-arguments');
+        const newArgumentDiv = document.createElement('div');
+        newArgumentDiv.className = 'flex items-center space-x-2 mb-2 argument-row';
+
+        newArgumentDiv.innerHTML = `
+            <div class="flex-grow">
+                <input
+                    type="text"
+                    class="arg-key block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    placeholder="Argument Name"
+                    required
+                >
+            </div>
+            <div class="flex-grow">
+                <input
+                    type="text"
+                    class="arg-value block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    placeholder="Argument Value"
+                >
+            </div>
+            <div>
+                <button
+                    type="button"
+                    onclick="removeArgument(this)"
+                    class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600"
+                >
+                    Remove
+                </button>
+            </div>
+        `;
+
+        container.appendChild(newArgumentDiv);
+    }
+
+    function removeArgument(button) {
+        const argumentRow = button.closest('.argument-row');
+        argumentRow.remove();
+    }
+
+    // Modify form submission to include dynamic arguments
+    document.getElementById('fire_form').addEventListener('submit', function(e) {
+        const argumentRows = document.querySelectorAll('.argument-row');
+
+        argumentRows.forEach(row => {
+            const keyInput = row.querySelector('.arg-key');
+            const valueInput = row.querySelector('.arg-value');
+
+            if (keyInput.value.trim()) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = keyInput.value;
+                hiddenInput.value = valueInput.value || '';
+                this.appendChild(hiddenInput);
+            }
+        });
+    });
+</script>
+{{end}}

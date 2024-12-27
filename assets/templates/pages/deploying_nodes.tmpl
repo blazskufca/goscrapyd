@@ -1,0 +1,60 @@
+{{define "page:title"}}Deploying your project{{end}}
+
+{{define "page:main"}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="test">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
+            Deploying project
+        </h1>
+        <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">
+            Overview of deploy statuses
+        </p>
+        <div style="display: none" id="notification"></div>
+    </div>
+
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 shadow-md sm:rounded-lg" hx-ext="sse" sse-connect="/deploy-sse" id="deploy-status" sse-close="deployment-complete">
+        <!-- Deploy done notification -->
+        <div style="display: none" sse-swap="deployment-complete" hx-swap="outerHTML" hx-target="#notification"></div>
+        <!-- When theres another deploy already running -->
+        <div style="display: none" sse-swap="locked_for_deploy" hx-swap="outerHTML" hx-target="#notification"></div>
+        <!-- Critical failure - Python failed to build an egg - remove SSE event listener (stop trying to reconnect to the source) because this is unrecoverable -->
+        <div style="display: none" sse-swap="build_error" hx-swap="outerHTML" hx-target="#deploy-status" ></div>
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400" id="result_table">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+            <tr>
+                <th scope="col" class="px-6 py-3">Node name</th>
+                <th scope="col" class="px-6 py-3">Status</th>
+                <th scope="col" class="px-6 py-3">Project</th>
+                <th scope="col" class="px-6 py-3">Version</th>
+                <th scope="col" class="px-6 py-3">Spiders</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Result.Nodes}}
+            <tr id="node_{{.}}" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                    {{.}}
+                </td>
+                <td class="px-6 py-4" id="status_{{.}}"
+                    hx-swap="innerHTML"
+                    sse-swap="status_{{.}}">
+                    <i>Deploying...</i>
+                </td>
+                <td class="px-6 py-4">
+                    <i>{{if $.Result.ProjectName}}{{$.Result.ProjectName}}{{else}}Unknown...{{end}}</i>
+                </td>
+                <td class="px-6 py-4">
+                    <i>{{if $.Result.Version}}{{$.Result.Version}}{{else}}Unknown{{end}}</i>
+                </td>
+                <td class="px-6 py-4" id="spiders_{{.}}"
+                    hx-swap="innerHTML"
+                    sse-swap="spider_{{.}}">
+                    <i>Deploying...</i>
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

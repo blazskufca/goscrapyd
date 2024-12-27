@@ -1,0 +1,75 @@
+{{define "htmx:TaskTable"}}
+{{range .Tasks}}
+<tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+    <td class="w-4 p-4">
+        <div class="flex items-center">
+            <input type="checkbox" name="selected_tasks" value="{{.TaskID}}" class="task-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+            <label class="sr-only">checkbox</label>
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{.TaskID}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{if .Name.Valid}}{{.Name.String}}{{else}}{{.Name}}{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{.Project}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{.Spider}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{.SelectedNodes}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">{{.CronString}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center" data-collapse-toggle="task-{{.TaskID}}-details">
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{if .Paused}}bg-yellow-100 text-yellow-800{{else}}bg-green-100 text-green-800{{end}}">
+        {{if .Paused}}Paused{{else}}Active{{end}}
+    </span>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <div class="flex justify-between items-center space-x-2">
+            {{if not .Paused}}
+            <button class="flex-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-green-600 transition-colors duration-300" hx-post="/fire-task/{{.TaskID}}">
+                Fire
+            </button>
+            <button class="flex-1 px-2 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300" hx-delete="/stop-task/{{.TaskID}}" hx-swap="innerHTML" hx-target="#tost">
+                Stop
+            </button>
+            {{else}}
+            <button class="flex-1 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-green-600 transition-colors duration-300" hx-post="/restart-task/{{.TaskID}}" hx-swap="none">
+                Start
+            </button>
+            {{end}}
+            <button class="flex-1 px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded hover:bg-gray-600 transition-colors duration-300"
+                    hx-delete="/delete-task/{{.TaskID}}"
+                    hx-confirm="Are you sure you want to delete task '{{if .Name.Valid}}{{.Name.String}}{{else}}{{.Name}}{{end}}' for spider '{{.Spider}}' on node '{{.SelectedNodes}}'? This is not the same as stopping a task (deletes from database)."
+                    hx-target="closest tr, tr#task-{{.TaskID}}-details"
+                    hx-swap="outerHTML">
+                Delete
+            </button>
+            <a class="flex-1 px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center" href="/task/edit/{{.TaskID}}">
+                Edit
+            </a>
+        </div>
+    </td>
+</tr>
+<tr class="hidden bg-gray-50 dark:bg-gray-700" id="task-{{.TaskID}}-details">
+    <td colspan="11" class="px-6 py-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-gray-500 dark:text-gray-400">
+                    <strong>Last Run:</strong>
+                    {{if .JobFinish.Valid}}
+                    {{.JobFinish.Time}}
+                    {{else}}
+                    N/A
+                    {{end}}
+                <p class="text-gray-500 dark:text-gray-400"><strong>Last Run Runtime:</strong> {{if .JobRuntime.Valid}}{{.JobRuntime.String}}{{else}}N/A{{end}}</p>
+                <p class="text-gray-500 dark:text-gray-400"><strong>Task created by:</strong> {{if .CreatedByUsername.Valid}}{{.CreatedByUsername.String}}{{else}}<i>Unknown...</i>{{end}}</p>
+            </div>
+            <div>
+                <p class="text-gray-500 dark:text-gray-400"><strong>Last run items:</strong> {{if .JobItems.Valid}}{{.JobItems.Int64}}{{else}}N/A{{end}}</p>
+                <p class="text-gray-500 dark:text-gray-400"><strong>Task created at:</strong> {{if .TaskCreateTime}}{{.TaskCreateTime}}{{else}}N/A{{end}}</p>
+                <p class="text-gray-500 dark:text-gray-400"><strong>Task last modified by:</strong> {{if .ModifiedByUsername.Valid}}{{.ModifiedByUsername.String}}{{else}}<i>Not yet modified...</i>{{end}}</p>
+                <!--                <p class="text-gray-500 dark:text-gray-400"><strong>Created At:</strong> placeholder </p>-->
+            </div>
+        </div>
+        <!--        <div class="mt-4">-->
+        <!--            <p class="text-gray-500 dark:text-gray-400"><strong>Description:</strong> This is a placeholder description for the task. It can contain more detailed information about the task's purpose and configuration.</p>-->
+        <!--        </div>-->
+    </td>
+</tr>
+{{end}}
+{{end}}

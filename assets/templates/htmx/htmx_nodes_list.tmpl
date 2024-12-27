@@ -1,0 +1,8 @@
+{{define "htmx:list_of_nodes"}}
+{{range .Nodes}}
+<li class="rounded-lg transition duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-600">
+    <a href="/{{.Name}}/jobs" class="flex items-center px-3 py-2 rounded-lg text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">View Jobs On: {{.Name}}
+    </a>
+</li>
+{{end}}
+{{end}}

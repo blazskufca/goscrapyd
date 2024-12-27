@@ -1,0 +1,15 @@
+cd version: "2"
+sql:
+
+  - schema: "assets/migrations"
+    queries: "sql/queries"
+    engine: "sqlite"
+    gen:
+      go:
+        emit_prepared_queries: true
+        out: "internal/database"
+        overrides:
+          - db_type: "UUID"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
