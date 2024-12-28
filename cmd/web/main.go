@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/sessions"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
+	"github.com/robfig/cron/v3"
 	"html/template"
 	"log"
 	"log/slog"
@@ -35,7 +36,7 @@ func init() {
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		AddSource: true,
-		Level:     slog.LevelDebug,
+		Level:     slog.LevelInfo,
 	}))
 
 	err := run(logger)
@@ -88,6 +89,7 @@ type config struct {
 	}
 	DefaultTimeout       time.Duration
 	ScrapydEncryptSecret string
+	autoUpdateNodes      string
 }
 
 type application struct {
@@ -135,12 +137,18 @@ func run(logger *slog.Logger) error {
 	flag.StringVar(&cfg.ScrapydEncryptSecret, "scrapyd-secret", "cpoga3pwmoq5s6wfxmhj5tplt6uusyy5", "Used to encrypt your scrapyd credentials in the database")
 	flag.BoolVar(&cfg.db.autoMigrate, "auto-migrate", true, "Automatically migrate the database")
 	flag.BoolVar(&cfg.db.createDefaultUser, "create-default-user", false, "Create admin:admin user on startup (useful for first startup so you can login. Don't forget to create legit users afterwards and delete this insecure one)")
+	flag.StringVar(&cfg.autoUpdateNodes, "auto-update-interval", "*/10 * * * *", "Updates jobs info for all the nodes in the background on a given schedule. Expects CRON string.")
 	showVersion := flag.Bool("version", false, "display version and exit")
 	flag.Parse()
 
 	if *showVersion {
 		fmt.Printf("version: %s\n", version.Get())
 		return nil
+	}
+
+	_, err := cron.ParseStandard(cfg.autoUpdateNodes)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	mailer, err := smtp.NewMailer(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.from)
@@ -194,6 +202,19 @@ func run(logger *slog.Logger) error {
 	app.scheduler = s
 	app.scheduler.Start()
 	err = app.loadTasksOnStart()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	job, err := app.scheduler.NewJob(gocron.CronJob(app.config.autoUpdateNodes, false), gocron.NewTask(app.updateAllNodesSchedule),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule), gocron.WithEventListeners(gocron.AfterJobRunsWithError(func(jobID uuid.UUID, jobName string, err error) {
+			log.Println("ERROR IN updateAllNodesSchedule", "jobID:", jobID, "jobName:", jobName, "err:", err)
+		}), gocron.AfterJobRunsWithPanic(func(jobID uuid.UUID, jobName string, recoverData any) {
+			log.Println("PANIC IN updateAllNodesSchedule:", "jobID:", jobID, "jobName:", jobName, "recoverData:", recoverData)
+		})))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = job.RunNow()
 	if err != nil {
 		log.Fatalln(err)
 	}

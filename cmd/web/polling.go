@@ -8,6 +8,7 @@ import (
 	"github.com/blazskufca/goscrapyd/internal/database"
 	"github.com/blazskufca/goscrapyd/internal/validator"
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/sync/errgroup"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -242,4 +243,59 @@ func (app *application) doPartialUpdate(ctx context.Context, node, status string
 			app.logger.ErrorContext(ctx, "error inserting job", slog.Any("project", spider.Project), slog.Any("job", spider.Id), slog.Any("spider", spider.Spider), slog.Any("err", err))
 		}
 	}
+}
+
+func (app *application) updateAllNodesSchedule() error {
+	ctx := context.Background()
+	nodes, err := app.DB.queries.ListScrapydNodes(ctx)
+	var onlineNodes []string
+	if err != nil {
+		return err
+	}
+	// Ping all the nodes, skip offline ones or where the request fails (unreachable node)
+	for _, node := range nodes {
+		req, err := makeRequestToScrapyd(ctx, app.DB.queries, http.MethodGet, node.Nodename, func(url *url.URL) *url.URL {
+			url.Path = path.Join(url.Path, ScrapydDaemonStatusReq)
+			return url
+		}, nil, nil, app.config.ScrapydEncryptSecret)
+		if err != nil {
+			return err
+		}
+		scrapydDaemonStatus, err := requestJSONResourceFromScrapyd[scrapydDaemonStatusResponse](req, app.logger)
+		if err != nil {
+			app.logger.DebugContext(ctx, "error when requesting DaemonStatusResponse in updateAllNodesSchedule", slog.Any("node", node.Nodename), slog.Any("err", err))
+			continue
+		}
+		if strings.TrimSpace(strings.ToLower(scrapydDaemonStatus.Status)) == "ok" {
+			onlineNodes = append(onlineNodes, node.Nodename)
+		} else {
+			app.logger.DebugContext(ctx, "updateAllNodesSchedule node status not ok", slog.Any("node", node.Nodename), slog.Any("status", scrapydDaemonStatus.Status))
+		}
+
+	}
+
+	var g errgroup.Group
+	g.SetLimit(app.config.workerCount)
+	for _, node := range onlineNodes {
+		node := node
+		g.Go(func() error {
+			defer func() {
+				err := recover()
+				if err != nil {
+					app.logger.Error("panic in updateAllNodesSchedule errGroup runner", slog.Any("recoverData", err))
+				}
+			}()
+			err := app.requestScrapydWorkInfo(ctx, node)
+			if err != nil {
+				app.logger.ErrorContext(ctx, "failed to update node work info",
+					slog.String("node", node),
+					slog.Any("error", err),
+				)
+				return fmt.Errorf("failed to update node %s: %w", node, err)
+			}
+			app.logger.Debug("node updated by updateAllNodesSchedule", slog.Any("node", node), slog.Any("time", time.Now()))
+			return nil
+		})
+	}
+	return g.Wait()
 }
