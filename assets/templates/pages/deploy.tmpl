@@ -57,7 +57,7 @@
             </div>
         </div>
         <div class="mt-6">
-            <label for="nodes_to_deploy" class="block mb-2 text-sm font-medium {{ if .Form.Validator.FieldErrors.nodes_to_deploy }}text-red-700 dark:text-red-500{{ else }}text-gray-700 dark:text-gray-300{{ end }}">Nodes to deploy:</label>
+            <label for="fireNode" class="block mb-2 text-sm font-medium {{ if .Form.Validator.FieldErrors.nodes_to_deploy }}text-red-700 dark:text-red-500{{ else }}text-gray-700 dark:text-gray-300{{ end }}">Nodes to deploy:</label>
             <div class="flex space-x-2 mb-2">
                 <button type="button" onclick="selectAllOptions()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors duration-200">
                     Select All
@@ -66,7 +66,7 @@
                     Deselect All
                 </button>
             </div>
-            <select multiple id="nodes_to_deploy" name="nodes_to_deploy"
+            <select multiple id="fireNode" name="nodes_to_deploy"
                     class="block w-full px-3 py-2 text-gray-700 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white {{ if .Form.Validator.FieldErrors.nodes_to_deploy }}border-red-500{{ else }}border-gray-300 dark:border-gray-600{{ end }}">
                 {{range .Nodes}}
                 <option value="{{.Nodename}}">{{.Nodename}}</option>
@@ -82,43 +82,6 @@
         </button>
     </form>
 </div>
-<script>
-    function selectAllOptions() {
-        const selectElement = document.getElementById('nodes_to_deploy');
-        for (let option of selectElement.options) {
-            option.selected = true;
-        }
-    }
-
-    function deselectAllOptions() {
-        const selectElement = document.getElementById('nodes_to_deploy');
-        for (let option of selectElement.options) {
-            option.selected = false;
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const accordionItems = document.querySelectorAll('[data-accordion-target]');
-        const errorFields = document.querySelectorAll('.text-red-600, .text-red-500');
-
-        accordionItems.forEach(item => {
-            const target = document.querySelector(item.getAttribute('data-accordion-target'));
-            const hasError = target.querySelector('.text-red-600, .text-red-500');
-
-            if (hasError) {
-                item.setAttribute('aria-expanded', 'true');
-                target.classList.remove('hidden');
-            } else {
-                item.setAttribute('aria-expanded', 'false');
-                target.classList.add('hidden');
-            }
-
-            item.addEventListener('click', () => {
-                const expanded = item.getAttribute('aria-expanded') === 'true' || false;
-                item.setAttribute('aria-expanded', !expanded);
-                target.classList.toggle('hidden');
-            });
-        });
-    });
-</script>
+<script src="/ui/static/js/group_select_deselect.min.js"></script>
+<script src="/ui/static/js/deploy_accordian.min.js"></script>
 {{end}}

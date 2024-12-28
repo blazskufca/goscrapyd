@@ -85,12 +85,4 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.body.addEventListener('htmx:afterRequest', function(event) {
-        if (event.target.id === "log-content" && (event.detail.failed === true || event.detail.isError === true)){
-            event.target.textContent = 'Could not fetch logs for:\nJob: \'{{.RunData.Job}}\'\nSpider: \'{{.RunData.Spider}}\'\nNode: \'{{.RunData.Node}}\'\nInternal URL tried: \'{{.RunData.HrefLog.String}}\'\nDoes it exist? Was it deleted?';
-        }
-    });
-</script>
 {{end}}
