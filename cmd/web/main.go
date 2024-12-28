@@ -49,10 +49,6 @@ func main() {
 type config struct {
 	baseURL   string
 	httpPort  int
-	basicAuth struct {
-		username       string
-		hashedPassword string
-	}
 	autoHTTPS struct {
 		domain  string
 		email   string
@@ -222,35 +218,39 @@ func openDB(cfg config) (*database.Queries, *sql.DB, error) {
 	defer cancel()
 	err = db.PingContext(ctx)
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, nil, err
 	}
 	if cfg.db.autoMigrate {
 		goose.SetBaseFS(assets.EmbeddedFiles)
 
 		if err := goose.SetDialect("sqlite3"); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, nil, err
 		}
 
 		if err := goose.Up(db, "migrations"); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, nil, err
 		}
 	}
 	preparedDb, err := database.Prepare(context.Background(), db)
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, nil, err
 	}
 	if cfg.db.createDefaultUser {
 		username := "admin"
 		userUUID, err := uuid.NewRandom()
 		if err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, nil, err
 		}
 		passwordHash, err := password.Hash("admin")
+		if err != nil {
+			_ = db.Close()
+			return nil, nil, err
+		}
 		_, err = preparedDb.CreateNewUser(context.Background(), database.CreateNewUserParams{
 			ID:                 userUUID,
 			Username:           username,
@@ -258,7 +258,7 @@ func openDB(cfg config) (*database.Queries, *sql.DB, error) {
 			HasAdminPrivileges: true,
 		})
 		if err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, nil, err
 		}
 		log.Println("Created default user", userUUID, "with username", username)

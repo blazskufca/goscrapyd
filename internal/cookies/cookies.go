@@ -132,7 +132,8 @@ func ReadEncrypted(r *http.Request, name string, secretKey string) (string, erro
 	nonce := encryptedValue[:nonceSize]
 	ciphertext := encryptedValue[nonceSize:]
 
-	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+	// False positive gosec warning about using hardcoded nonce -> Verified this is not the case rule ignored for now
+	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil) // #nosec G407
 	if err != nil {
 		return "", ErrInvalidValue
 	}

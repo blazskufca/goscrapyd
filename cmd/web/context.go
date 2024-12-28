@@ -10,6 +10,8 @@ type contextKey string
 
 const (
 	authenticatedUserContextKey = contextKey("authenticatedUser")
+	backendUrl                  = contextKey("backendURL")
+	xForwardedForPrefix         = contextKey("xForwardedForPrefix")
 )
 
 func contextSetAuthenticatedUser(r *http.Request, user *database.User) *http.Request {

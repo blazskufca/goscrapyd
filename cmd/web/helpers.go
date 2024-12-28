@@ -54,25 +54,25 @@ func (app *application) newEmailData() map[string]any {
 	return data
 }
 
-func (app *application) backgroundTask(r *http.Request, fn func() error) {
-	app.wg.Add(1)
-
-	go func() {
-		defer app.wg.Done()
-
-		defer func() {
-			err := recover()
-			if err != nil {
-				app.reportServerError(r, fmt.Errorf("%s", err))
-			}
-		}()
-
-		err := fn()
-		if err != nil {
-			app.reportServerError(r, err)
-		}
-	}()
-}
+//func (app *application) backgroundTask(r *http.Request, fn func() error) {
+//	app.wg.Add(1)
+//
+//	go func() {
+//		defer app.wg.Done()
+//
+//		defer func() {
+//			err := recover()
+//			if err != nil {
+//				app.reportServerError(r, fmt.Errorf("%s", err))
+//			}
+//		}()
+//
+//		err := fn()
+//		if err != nil {
+//			app.reportServerError(r, err)
+//		}
+//	}()
+//}
 
 func makeRequestToScrapyd(ctx context.Context, DB *database.Queries, method, nodeName string, setUrlParams func(url *url.URL) *url.URL, body io.Reader, presetHeaders *http.Header, secret string) (madeReq *http.Request, err error) {
 	node, err := DB.GetNodeWithName(ctx, nodeName)
@@ -378,7 +378,8 @@ func decrypt(value []byte, secret string) (string, error) {
 	nonce := value[:nonceSize]
 	ciphertext := value[nonceSize:]
 
-	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+	// False positive gosec warning about using hardcoded nonce, for now it has to be ignored
+	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil) // #nosec G407
 	if err != nil {
 		return "", err
 	}

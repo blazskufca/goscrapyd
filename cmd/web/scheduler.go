@@ -89,7 +89,7 @@ func (app *application) createNewTask(w http.ResponseWriter, r *http.Request) {
 				app.serverError(w, r, err)
 				return
 			}
-			if formData.Immediately != nil && *formData.Immediately == true {
+			if formData.Immediately != nil && *formData.Immediately {
 				err = cronJob.RunNow()
 				if err != nil {
 					app.serverError(w, r, err)
@@ -97,7 +97,7 @@ func (app *application) createNewTask(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			result = append(result, cronJob)
-			querParams := database.InsertTaskParams{
+			queryParams := database.InsertTaskParams{
 				ID:                cronJob.ID(),
 				Name:              database.CreateSqlNullString(&formData.TaskName),
 				Project:           formData.Project,
@@ -109,9 +109,9 @@ func (app *application) createNewTask(w http.ResponseWriter, r *http.Request) {
 				Paused:            false,
 			}
 			if user := contextGetAuthenticatedUser(r); user != nil {
-				querParams.CreatedBy = user.ID
+				queryParams.CreatedBy = user.ID
 			}
-			_, err = app.DB.queries.InsertTask(ctxwt, querParams)
+			_, err = app.DB.queries.InsertTask(ctxwt, queryParams)
 			if err != nil {
 				app.serverError(w, r, err)
 				return
@@ -382,6 +382,10 @@ func (app *application) searchTasksTable(w http.ResponseWriter, r *http.Request)
 	defer cancel()
 	var formData tasksSearchForm
 	err := request.DecodePostForm(r, &formData)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
 	tasks, err := app.DB.queries.SearchTasksTable(ctxwt, formData.SearchTerm)
 	if err != nil {
 		app.serverError(w, r, err)

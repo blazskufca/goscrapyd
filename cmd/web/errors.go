@@ -47,14 +47,14 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 	}
 }
 
-func (app *application) notFound(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-
-	err := response.Page(w, http.StatusNotFound, data, "pages/errors/404.tmpl")
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-}
+//func (app *application) notFound(w http.ResponseWriter, r *http.Request) {
+//	data := app.newTemplateData(r)
+//
+//	err := response.Page(w, http.StatusNotFound, data, "pages/errors/404.tmpl")
+//	if err != nil {
+//		app.serverError(w, r, err)
+//	}
+//}
 
 func (app *application) badRequest(w http.ResponseWriter, r *http.Request, err error) {
 	data := app.newTemplateData(r)

@@ -11,7 +11,9 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/justinas/nosurf v1.1.1
 	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pressly/goose/v3 v3.24.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/wneessen/go-mail v0.5.2
 	golang.org/x/crypto v0.31.0
@@ -21,12 +23,13 @@ require (
 )
 
 require (
+	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.33.0 // indirect

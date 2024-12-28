@@ -1,4 +1,4 @@
-cd version: "2"
+version: "2"
 sql:
 
   - schema: "assets/migrations"

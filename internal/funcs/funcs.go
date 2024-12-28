@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"github.com/microcosm-cc/bluemonday"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"html/template"
 	"math"
 	"net/url"
@@ -11,9 +14,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 const (
@@ -142,7 +142,10 @@ func slugify(s string) string {
 }
 
 func safeHTML(s string) template.HTML {
-	return template.HTML(s)
+	p := bluemonday.UGCPolicy()
+	sanitized := p.Sanitize(s)
+	// gosec false positive it's sanitized
+	return template.HTML(sanitized) // #nosec G203
 }
 
 func incr(i any) (int64, error) {
@@ -220,7 +223,9 @@ func toInt64(i any) (int64, error) {
 	case int64:
 		return v, nil
 	case uint:
-		return int64(v), nil
+		if v > math.MaxInt64 {
+			return 0, fmt.Errorf("uint value %d is too large to fit in an int64", v)
+		}
 	case uint8:
 		return int64(v), nil
 	case uint16:

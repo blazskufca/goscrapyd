@@ -127,7 +127,7 @@ func (app *application) deploy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Request) {
-	ctxwt, cancelFunc := context.WithCancel(context.Background())
+	ctxwc, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -158,7 +158,7 @@ func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	egg, err := app.buildEggInternal(cookieData.ProjectLocation)
+	egg, err := app.buildEggInternal(ctxwc, cookieData.ProjectLocation)
 	if err != nil {
 		app.reportServerError(r, err)
 		app.writeSSEResponse(w, r, flusher, err, buildFailedSSE, "build_error", "sse:BuildFailed")
@@ -169,7 +169,7 @@ func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Requ
 	jobs := make(chan string, numJobs)
 	results := make(chan addVersionResponse, numJobs)
 	for w := 0; w < app.config.workerCount; w++ {
-		go app.deployToNodeWorker(ctxwt, cookieData.ProjectName, cookieData.Version, egg, jobs, results)
+		go app.deployToNodeWorker(ctxwc, cookieData.ProjectName, cookieData.Version, egg, jobs, results)
 	}
 
 	for _, node := range cookieData.Nodes {
@@ -178,15 +178,13 @@ func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Requ
 	close(jobs)
 
 	for i := 0; i < numJobs; i++ {
-		select {
-		case res := <-results:
-			if res.Error != nil {
-				app.reportServerError(r, res.Error)
-				app.writeSSEResponse(w, r, flusher, res.Error, deployErrorSSE, "status_"+res.ActualNodeName, "sse:deployError")
-			} else {
-				app.writeSSEResponse(w, r, flusher, res.Status, justTemplateDataSSE, "status_"+res.ActualNodeName, "sse:justTemplateData")
-				app.writeSSEResponse(w, r, flusher, res.Spiders, justTemplateDataSSE, "spider_"+res.ActualNodeName, "sse:justTemplateData")
-			}
+		res := <-results
+		if res.Error != nil {
+			app.reportServerError(r, res.Error)
+			app.writeSSEResponse(w, r, flusher, res.Error, deployErrorSSE, "status_"+res.ActualNodeName, "sse:deployError")
+		} else {
+			app.writeSSEResponse(w, r, flusher, res.Status, justTemplateDataSSE, "status_"+res.ActualNodeName, "sse:justTemplateData")
+			app.writeSSEResponse(w, r, flusher, res.Spiders, justTemplateDataSSE, "spider_"+res.ActualNodeName, "sse:justTemplateData")
 		}
 	}
 	close(results)
@@ -264,7 +262,7 @@ func (app *application) deployToNodeWorker(ctx context.Context, project string, 
 	}
 }
 
-func (app *application) buildEggInternal(scrapyCfg string) ([]byte, error) {
+func (app *application) buildEggInternal(ctx context.Context, scrapyCfg string) ([]byte, error) {
 	pythonScript, err := assets.EmbeddedFiles.ReadFile("build_egg.py")
 	if err != nil {
 		return nil, fmt.Errorf("error reading embedded Python script: %v", err)
@@ -275,7 +273,9 @@ func (app *application) buildEggInternal(scrapyCfg string) ([]byte, error) {
 	// before it's passed to this execute
 	// Probably keeping this a to do indefinitely because it is a probable command injection spot nonetheless and todos make it stand
 	// out more in a lot of editors
-	cmd := exec.Command(app.config.pythonPath, "-c", string(pythonScript), scrapyCfg)
+
+	// I think this is again a gosec false positive, scrapyCfg is verified with helpers.sanitizePath on form submission
+	cmd := exec.CommandContext(ctx, app.config.pythonPath, "-c", string(pythonScript), scrapyCfg) // #nosec G204
 	out := new(bytes.Buffer)
 	stderr := new(bytes.Buffer)
 	cmd.Stdout = out

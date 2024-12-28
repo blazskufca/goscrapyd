@@ -85,11 +85,9 @@ func (app *application) reverseProxyMiddleware(next http.Handler) http.Handler {
 			r.SetBasicAuth(node.Username.String, decryptedPassword)
 		}
 		expectedPrefix := fmt.Sprintf("/%s/scrapyd-backend", r.PathValue("node"))
-		if strings.HasPrefix(r.URL.Path, expectedPrefix) {
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, expectedPrefix)
-		}
-		r = r.WithContext(context.WithValue(r.Context(), "backendURL", parsedURL))
-		r = r.WithContext(context.WithValue(r.Context(), "xForwardedForPrefix", expectedPrefix))
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, expectedPrefix)
+		r = r.WithContext(context.WithValue(r.Context(), backendUrl, parsedURL))
+		r = r.WithContext(context.WithValue(r.Context(), xForwardedForPrefix, expectedPrefix))
 		next.ServeHTTP(w, r)
 	})
 }
