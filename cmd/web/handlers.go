@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -49,6 +50,8 @@ const (
 	settingsPage           templateName = "settings_page.tmpl"
 	editUserPage           templateName = "edit_user_form.tmpl"
 	htmxListNodes          templateName = "htmx_nodes_list.tmpl"
+	versionsPage           templateName = "versions.tmpl"
+	versionsPageHtmx       templateName = "htmx_versions.tmpl"
 )
 
 // Other various misc strings
@@ -66,6 +69,7 @@ const (
 	ScrapydScheduleSpider  string = "schedule.json"
 	ScrapydAddVersion      string = "addversion.json"
 	ScrapydStopSpider      string = "cancel.json"
+	ScrapydListVersions    string = "listversions.json"
 )
 
 var (
@@ -619,4 +623,62 @@ func (app *application) searchJobs(w http.ResponseWriter, r *http.Request) {
 	data["FinishedJobs"] = finished
 	data["NodeName"] = r.PathValue("node")
 	app.renderHTMX(w, r, http.StatusOK, htmxJobsTable, nil, "htmx:jobsTable", data)
+}
+
+func (app *application) listVersions(w http.ResponseWriter, r *http.Request) {
+	ctxwt, cancel := context.WithTimeout(r.Context(), app.config.DefaultTimeout)
+	defer cancel()
+	nodes, err := app.DB.queries.ListScrapydNodes(ctxwt)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	templateData := app.newTemplateData(r)
+	templateData["Nodes"] = nodes
+	app.render(w, r, http.StatusOK, versionsPage, nil, templateData)
+}
+
+func (app *application) listVersionsHTMX(w http.ResponseWriter, r *http.Request) {
+	type versionsResponse struct {
+		NodeName string   `json:"node_name"`
+		Status   string   `json:"status"`
+		Versions []string `json:"versions"`
+	}
+	ctxwt, cancel := context.WithTimeout(r.Context(), app.config.DefaultTimeout)
+	defer cancel()
+	node, project := r.URL.Query().Get("node"), r.URL.Query().Get("project")
+	if node == "" || project == "" {
+		app.reportServerError(r, errors.New("no node or project specified"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	req, err := makeRequestToScrapyd(ctxwt, app.DB.queries, http.MethodGet, node, func(url *url.URL) *url.URL {
+		url.Path = path.Join(url.Path, ScrapydListVersions)
+		query := url.Query()
+		query.Add("project", project)
+		url.RawQuery = query.Encode()
+		return url
+	}, nil, nil, app.config.ScrapydEncryptSecret)
+	if err != nil {
+		app.reportServerError(r, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	resp, err := requestJSONResourceFromScrapyd[versionsResponse](req, app.logger)
+	if err != nil {
+		app.reportServerError(r, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if strings.ToLower(strings.TrimSpace(resp.Status)) != "ok" {
+		app.reportServerError(r, errors.New(resp.Status))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	slices.Reverse(resp.Versions)
+	templateData := app.newTemplateData(r)
+	templateData["Versions"] = resp.Versions
+	templateData["Node"] = node
+	templateData["Project"] = project
+	app.renderHTMX(w, r, http.StatusOK, versionsPageHtmx, nil, "htmx:scrapyd_versions", templateData)
 }

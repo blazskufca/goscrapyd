@@ -1,0 +1,50 @@
+{{define "page:title"}}Versions{{end}}
+
+{{define "page:main"}}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">Versions</h1>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div>
+            <label for="nodeSelect" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Node</label>
+            <select id="nodeSelect" name="node" class="block w-full px-3 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    hx-get="/htmx-fire-form"
+                    hx-target="#projectSelect"
+                    hx-trigger="change[this.value != '' && target.value != '']">
+                <option value="">Select Node</option>
+                {{range .Nodes}}
+                <option value="{{.Nodename}}">{{.Nodename}}</option>
+                {{end}}
+            </select>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Select a node to see versions.</p>
+        </div>
+        <div>
+            <label for="projectSelect" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
+            <select id="projectSelect" name="project"
+                    class="block w-full px-3 py-2 text-gray-700 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white {{ if .Form.Validator.FieldErrors.project }}border-red-500{{ else }}border-gray-300 dark:border-gray-600{{ end }}"
+                    hx-get="/versions-htmx"
+                    hx-target="#table_body"
+                    hx-include="#nodeSelect"
+                    hx-trigger="change[this.value != '' && target.value != '' && document.getElementById('nodeSelect').value != '']">
+                <option value="">Select project</option>
+            </select>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Select your project to view versions</p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow">
+        <table class="w-full table-auto text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap min-w-[100px] text-center">Version</th>
+                <th scope="col" class="px-6 py-3 whitespace-nowrap min-w-[200px] text-center">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="table_body" class="divide-y divide-gray-200 dark:divide-gray-700">
+            </tbody>
+        </table>
+    </div>
+</div>
+{{ end }}

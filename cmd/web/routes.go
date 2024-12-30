@@ -43,6 +43,8 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).ThenFunc(app.reverseProxy.ServeHTTP))
 	mux.Handle("POST /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).ThenFunc(app.reverseProxy.ServeHTTP))
 	mux.Handle("POST /{node}/job/search", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.searchJobs))
+	mux.Handle("GET /versions", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersions))
+	mux.Handle("GET /versions-htmx", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersionsHTMX))
 	// This should come last because it's the general root route.
 	mux.Handle("GET /", appMiddleware.Append(app.requireAuthenticatedUser).Then(http.RedirectHandler("/list-nodes", http.StatusMovedPermanently)))
 	// Admin only routes
