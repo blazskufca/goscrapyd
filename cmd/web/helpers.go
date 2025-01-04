@@ -237,7 +237,7 @@ func (app *application) loadTasksOnStart() error {
 		}
 		values, err := url.ParseQuery(task.SettingsArguments)
 		if err != nil {
-			app.logger.Error("Error parsing query:", err)
+			app.logger.Error("Error parsing query:", slog.Any("err", err))
 			return err
 		}
 		var nameStr string

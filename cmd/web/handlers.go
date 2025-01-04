@@ -156,7 +156,8 @@ func (app *application) insertNewScrapydNode(w http.ResponseWriter, r *http.Requ
 		}
 		_, err = app.DB.queries.NewScrapydNode(ctxwt, dbQueryParams)
 		if err != nil {
-			if errors.As(err, &errScrapydTableUniqueConstraint) {
+			if strings.Contains(err.Error(), errScrapydTableUniqueConstraint.Error()) {
+				// Handle the error
 				data := app.newTemplateData(r)
 				data["Form"] = fd
 				data["UniqueViolation"] = fmt.Sprintf(scrapydUniqueConstraintErr, fd.NodeName, fd.URL)
@@ -398,7 +399,6 @@ func (app *application) htmxFireForm(w http.ResponseWriter, r *http.Request) {
 			url.Path = path.Join(url.Path, ScrapydListSpidersReq)
 			query := url.Query()
 			query.Add("project", q.Get("project"))
-			query.Add("_version", q.Get("version"))
 			url.RawQuery = query.Encode()
 			return url
 		}, nil, nil, app.config.ScrapydEncryptSecret)

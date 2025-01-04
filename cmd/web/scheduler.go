@@ -201,7 +201,7 @@ func (app *application) deleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = app.deleteTaskFromScheduler(ctxwt, r.PathValue("taskUUID"))
-	if err != nil && !errors.As(err, &gocron.ErrJobNotFound) {
+	if err != nil && !errors.Is(err, gocron.ErrJobNotFound) {
 		app.serverError(w, r, err)
 		return
 	}

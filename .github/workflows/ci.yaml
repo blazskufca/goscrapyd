@@ -48,3 +48,6 @@ jobs:
 
       - name: Run gosec
         run: gosec -exclude=G101 ./...
+
+      - name: Run Go Tests
+        run: go test ./...
