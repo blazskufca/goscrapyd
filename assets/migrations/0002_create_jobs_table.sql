@@ -31,6 +31,6 @@ CREATE INDEX IF NOT EXISTS idx_job ON jobs(job);
 CREATE INDEX IF NOT EXISTS idx_spider ON jobs(spider);
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_job ON jobs(job);
-DROP INDEX IF EXISTS idx_spider ON jobs(spider);
+DROP INDEX IF EXISTS idx_job;
+DROP INDEX IF EXISTS idx_spider;
 DROP TABLE IF EXISTS jobs;

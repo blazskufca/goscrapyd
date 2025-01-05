@@ -275,43 +275,49 @@ func sanitizePath(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("path cannot be empty")
 	}
+	decodedPath, err := url.QueryUnescape(path)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL encoding in path")
+	}
+	path = decodedPath
+	if strings.HasPrefix(path, `\\`) {
+		return "", fmt.Errorf("path contains dangerous sequences (UNC path detected)")
+	}
+	path = filepath.Clean(path)
+	if strings.Contains(path, "..") {
+		return "", fmt.Errorf("path contains directory traversal ('..')")
+	}
+	forbiddenChars := []string{";", "&", "|", ">", "<", "`", "$", "(", ")", "{", "}", "[", "]", "!", "#"}
+	for _, char := range forbiddenChars {
+		if strings.Contains(path, char) {
+			return "", fmt.Errorf("path contains forbidden character: %v", char)
+		}
+	}
+	re, err := regexp.Compile(`(?i)(\.\./|\.\.\\|/\.\./|/\\\.\.|\\..\\)`)
+	if err != nil {
+		return "", err
+	}
+	if re.MatchString(path) {
+		return "", fmt.Errorf("path contains dangerous sequences like '..' or '\\'")
+	}
+	for _, r := range path {
+		if r > unicode.MaxASCII {
+			return "", fmt.Errorf("path contains non-ASCII characters")
+		}
+	}
+	if filepath.Ext(path) != ".cfg" {
+		return "", fmt.Errorf("you should provide a path which points to a scrapy.cfg file")
+	}
+	_, err = os.Stat(path)
+	if err != nil && os.IsNotExist(err) {
+		return "", err
+	}
 
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to get absolute path: %v", err)
 	}
 
-	if strings.Contains(absPath, "..") {
-		return "", fmt.Errorf("path contains directory traversal ('..')")
-	}
-
-	forbiddenChars := []string{";", "&", "|", ">", "<", "`", "$", "(", ")", "{", "}", "[", "]", "!", "#"}
-	for _, char := range forbiddenChars {
-		if strings.Contains(absPath, char) {
-			return "", fmt.Errorf("path contains forbidden character: %v", char)
-		}
-	}
-
-	re, err := regexp.Compile(`(?i)(\.\./|\.\.\\|/\.\./|/\\\.\.|\\..\\)`)
-	if err != nil {
-		return "", err
-	}
-	if re.MatchString(absPath) {
-		return "", fmt.Errorf("path contains dangerous sequences like '..' or '\\'")
-	}
-
-	for _, r := range absPath {
-		if r > unicode.MaxASCII {
-			return "", fmt.Errorf("path contains non-ASCII characters")
-		}
-	}
-	_, err = os.Stat(path)
-	if err != nil {
-		return "", err
-	}
-	if !strings.HasSuffix(strings.ToLower(absPath), "scrapy.cfg") {
-		return "", fmt.Errorf("you should provide a path which points to a scrapy.cfg file")
-	}
 	return absPath, nil
 }
 

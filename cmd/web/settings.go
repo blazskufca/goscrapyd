@@ -53,13 +53,17 @@ func (app *application) settingPage(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, r, err)
 			return
 		}
-		cleanPath, err := sanitizePath(formData.ProjectPath)
-		if err != nil {
-			formData.Validator.CheckField(validator.NotBlank(formData.ProjectPath), "ProjectPath", err.Error())
+		var cleanPath string
+		if formData.ProjectPath != "" {
+			cleanPath, err = sanitizePath(formData.ProjectPath)
+			if err != nil {
+				formData.Validator.AddFieldError("ProjectPath", err.Error())
+			}
 		}
 		if formData.Validator.HasErrors() {
 			data := app.newTemplateData(r)
 			data["Form"] = formData
+			data["ProjectName"] = formData.ProjectName
 			app.render(w, r, http.StatusUnprocessableEntity, settingsPage, nil, data)
 			return
 		}

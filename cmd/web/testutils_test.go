@@ -2,18 +2,23 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
+	"github.com/blazskufca/goscrapyd/assets"
 	"github.com/blazskufca/goscrapyd/internal/assert"
 	"github.com/blazskufca/goscrapyd/internal/database"
+	"github.com/blazskufca/goscrapyd/internal/password"
+	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
+	"github.com/pressly/goose/v3"
 	"html"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"regexp"
 	"sync"
 	"testing"
@@ -39,7 +44,7 @@ func newTestApplication(t *testing.T) *application {
 			autoMigrate       bool
 			createDefaultUser bool
 		}{
-			dsn:               "./../../testing_database.db",
+			dsn:               ":memory:",
 			maxOpenConns:      25,
 			maxIdleConns:      25,
 			maxIdleTime:       30 * time.Minute,
@@ -67,13 +72,90 @@ func newTestApplication(t *testing.T) *application {
 		SameSite: http.SameSiteLaxMode,
 		Secure:   true,
 	}
+	openDB := func(cfg config) (*database.Queries, *sql.DB, error) {
+		db, err := sql.Open("sqlite3", cfg.db.dsn)
+		if err != nil {
+			return nil, nil, err
+		}
+		if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+			return nil, nil, err
+		}
+		db.SetMaxOpenConns(cfg.db.maxOpenConns)
+		db.SetMaxIdleConns(cfg.db.maxIdleConns)
+		db.SetConnMaxIdleTime(cfg.db.maxIdleTime)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err = db.PingContext(ctx)
+		if err != nil {
+			_ = db.Close()
+			return nil, nil, err
+		}
+		if cfg.db.autoMigrate {
+			goose.SetLogger(log.New(io.Discard, "", 0))
+			goose.SetBaseFS(assets.EmbeddedFiles)
+
+			if err := goose.SetDialect("sqlite3"); err != nil {
+				_ = db.Close()
+				return nil, nil, err
+			}
+
+			if err := goose.Up(db, "migrations"); err != nil {
+				_ = db.Close()
+				return nil, nil, err
+			}
+		}
+		preparedDb, err := database.Prepare(context.Background(), db)
+		if err != nil {
+			_ = db.Close()
+			return nil, nil, err
+		}
+		if cfg.db.createDefaultUser {
+			username := "admin"
+			userUUID, err := uuid.NewRandom()
+			if err != nil {
+				_ = db.Close()
+				return nil, nil, err
+			}
+			passwordHash, err := password.Hash("admin")
+			if err != nil {
+				_ = db.Close()
+				return nil, nil, err
+			}
+			_, err = preparedDb.CreateNewUser(context.Background(), database.CreateNewUserParams{
+				ID:                 userUUID,
+				Username:           username,
+				HashedPassword:     passwordHash,
+				HasAdminPrivileges: true,
+			})
+			if err != nil {
+				_ = db.Close()
+				return nil, nil, err
+			}
+		}
+		return preparedDb, db, nil
+	}
 	db, dbcon, err := openDB(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		goose.SetBaseFS(assets.EmbeddedFiles)
+		goose.SetLogger(log.New(io.Discard, "", 0))
+		if err := goose.SetDialect("sqlite3"); err != nil {
+			t.Fatal(err)
+		}
+		err := goose.DownTo(dbcon, "migrations", 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = dbcon.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 	return &application{
 		config:       cfg,
-		logger:       slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
 		mailer:       nil,
 		sessionStore: sessionStore,
 		wg:           sync.WaitGroup{},
@@ -174,6 +256,26 @@ func (ts *testServer) get(t *testing.T, urlPath string) (int, http.Header, strin
 	return rs.StatusCode, rs.Header, string(body)
 }
 
+func (ts *testServer) delete(t *testing.T, urlPath string) (int, http.Header, []byte) {
+	req, err := http.NewRequest(http.MethodDelete, ts.URL+urlPath, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rs, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer rs.Body.Close()
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return rs.StatusCode, rs.Header, body
+}
+
 var csrfTokenRX = regexp.MustCompile(`<input type="hidden" name="csrf_token" value="(.+)">`)
 
 func extractCSRFToken(t *testing.T, body string) string {
@@ -190,7 +292,6 @@ func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (i
 		t.Fatal(err)
 	}
 
-	// Read the response body from the test server.
 	defer rs.Body.Close()
 	body, err := io.ReadAll(rs.Body)
 	if err != nil {

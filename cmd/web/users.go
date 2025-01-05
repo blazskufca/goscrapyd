@@ -187,11 +187,16 @@ func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) {
 	parsedUUID, err := uuid.Parse(r.PathValue("userID"))
 	if err != nil {
 		app.reportServerError(r, err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	err = app.DB.queries.DeleteUserByUUID(ctxwt, parsedUUID)
 	if err != nil {
 		app.reportServerError(r, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+		}
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("HX-Refresh", "true")

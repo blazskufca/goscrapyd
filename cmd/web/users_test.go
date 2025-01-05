@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,15 +17,6 @@ import (
 func TestUserLogin(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
-	t.Cleanup(func() {
-		ts.Close()
-		app.DB.dbConn.Close()
-		err := os.Remove(app.config.db.dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
 	tests := []struct {
 		name         string
 		username     string
@@ -129,14 +119,6 @@ func TestUserLogin(t *testing.T) {
 func TestRequireAuthenticatedUser(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
-	t.Cleanup(func() {
-		ts.Close()
-		app.DB.dbConn.Close()
-		err := os.Remove(app.config.db.dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
 	ts.login(t)
 	tests := []struct {
 		name         string
@@ -195,17 +177,6 @@ func TestRequireAuthenticatedUser(t *testing.T) {
 func TestAddNewUser(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
-	t.Cleanup(func() {
-		ts.Close()
-		err := app.DB.dbConn.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.Remove(app.config.db.dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
 	ts.login(t)
 	tests := []struct {
 		name            string
@@ -302,17 +273,6 @@ func TestAddNewUser(t *testing.T) {
 func TestEditUser(t *testing.T) {
 	app := newTestApplication(t)
 	ts := newTestServer(t, app.routes())
-	t.Cleanup(func() {
-		ts.Close()
-		err := app.DB.dbConn.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.Remove(app.config.db.dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
 	ts.login(t)
 	var user database.User
 	t.Run("Create User", func(t *testing.T) {
@@ -352,5 +312,57 @@ func TestEditUser(t *testing.T) {
 		}
 		assert.StringContains(t, body, "ThisIsEditedUser")
 		assert.StringDoesNotContain(t, body, "TestUser")
+	})
+}
+
+func TestDeleteUser(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	ts.login(t)
+	var user database.User
+	t.Run("Create User", func(t *testing.T) {
+		userUUID := uuid.New()
+		hashedPassword, err := password.Hash("ThisIsAVerySecurePasswordA$$word")
+		if err != nil {
+			t.Fatal(err)
+		}
+		user, err = app.DB.queries.CreateNewUser(context.Background(), database.CreateNewUserParams{
+			ID:                 userUUID,
+			Username:           "TestUser",
+			HashedPassword:     hashedPassword,
+			HasAdminPrivileges: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("Delete Existent User", func(t *testing.T) {
+		code, _, _ := ts.delete(t, "/user/delete/"+user.ID.String())
+		if code != http.StatusOK {
+			t.Fatalf("got status %d; want %d", code, http.StatusOK)
+		}
+	})
+	t.Run("Deleted users does no exist anymore", func(t *testing.T) {
+		code, _, body := ts.get(t, "/list-users")
+		if code != http.StatusOK {
+			t.Fatalf("got status %d; want %d", code, http.StatusOK)
+		}
+		assert.StringDoesNotContain(t, body, "TestUser")
+	})
+	t.Run("Delete non-existent user", func(t *testing.T) {
+		fakeUUID, err := uuid.NewRandom()
+		if err != nil {
+			t.Fatal(err)
+		}
+		code, _, _ := ts.delete(t, "/user/delete/"+fakeUUID.String())
+		if code != http.StatusOK {
+			t.Fatalf("got status %d; want %d", code, http.StatusOK)
+		}
+	})
+	t.Run("Delete non-UUID", func(t *testing.T) {
+		code, _, _ := ts.delete(t, "/user/delete/not-a-uuid")
+		if code != http.StatusBadRequest {
+			t.Fatalf("got status %d; want %d", code, http.StatusBadRequest)
+		}
 	})
 }

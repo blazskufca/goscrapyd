@@ -21,6 +21,6 @@ CREATE INDEX IF NOT EXISTS idx_task_name ON tasks(name);
 CREATE INDEX IF NOT EXISTS idx_task_spider ON tasks(spider);
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_task_name ON tasks(name);
-DROP INDEX IF EXISTS idx_task_spider ON tasks(spider);
+DROP INDEX IF EXISTS idx_task_name;
+DROP INDEX IF EXISTS idx_task_spider;
 DROP TABLE IF EXISTS tasks;

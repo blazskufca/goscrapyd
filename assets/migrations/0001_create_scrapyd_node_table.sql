@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS scrapyd_nodes (
 CREATE INDEX IF NOT EXISTS idx_nodename ON scrapyd_nodes(nodeName);
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_nodename ON scrapyd_nodes(nodeName);
+DROP INDEX IF EXISTS idx_nodename;
 DROP TABLE IF EXISTS scrapyd_nodes;
