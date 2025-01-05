@@ -229,7 +229,16 @@ func openDB(cfg config) (*database.Queries, *sql.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+	if _, err := db.Exec(`PRAGMA foreign_keys = ON;`); err != nil {
+		return nil, nil, err
+	}
+	if _, err := db.Exec(`PRAGMA journal_mode=WAL;`); err != nil {
+		return nil, nil, err
+	}
+	if _, err := db.Exec(`PRAGMA busy_timeout = 5000;`); err != nil {
+		return nil, nil, err
+	}
+	if _, err := db.Exec(`PRAGMA synchronous = NORMAL;`); err != nil {
 		return nil, nil, err
 	}
 	db.SetMaxOpenConns(cfg.db.maxOpenConns)

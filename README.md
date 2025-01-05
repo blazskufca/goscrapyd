@@ -1,4 +1,4 @@
-# Goscrapyd
+# Goscrapyd ![CI Workflow](https://github.com/blazskufca/goscrapyd/actions/workflows/ci.yaml/badge.svg)
 
 *GoScrapyd* is a web-based cluster management tool designed to simplify the management and monitoring of your Scrapyd instances. Built almost entirely in Go, it provides a modern, user-friendly interface with enhanced security and advanced features.
 
