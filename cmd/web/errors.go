@@ -80,7 +80,7 @@ func (app *application) checkCreateTaskError(w http.ResponseWriter, r *http.Requ
 func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	err := response.Page(w, http.StatusBadRequest, data, "pages/errors/429.tmpl")
+	err := response.Page(w, http.StatusTooManyRequests, data, "pages/errors/429.tmpl")
 	if err != nil {
 		app.serverError(w, r, err)
 	}

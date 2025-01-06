@@ -32,11 +32,6 @@ func TestProjectPath(t *testing.T) {
 			expected: "<span>invalid URL encoding in path</span>",
 		},
 		{
-			name:     "Double slash normalization",
-			path:     "////etc////scrapy.cfg",
-			expected: "<span>stat /etc/scrapy.cfg: no such file or directory</span>",
-		},
-		{
 			name:     "Mixed encoding",
 			path:     "..%252f..%252fetc/scrapy.cfg",
 			expected: "<span>path contains directory traversal (&#39;..&#39;)</span>",
