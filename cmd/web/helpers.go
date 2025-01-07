@@ -83,7 +83,16 @@ func makeRequestToScrapyd(ctx context.Context, DB *database.Queries, method, nod
 	if err != nil {
 		return nil, err
 	}
-	madeReq, err = http.NewRequestWithContext(ctx, method, setUrlParams(nodeUrl).String(), body)
+	var urlString string
+	switch {
+	case nodeUrl != nil && setUrlParams != nil:
+		urlString = setUrlParams(nodeUrl).String()
+	case nodeUrl != nil && setUrlParams == nil:
+		urlString = nodeUrl.String()
+	default:
+		return nil, errors.New("invalid node url")
+	}
+	madeReq, err = http.NewRequestWithContext(ctx, method, urlString, body)
 	if err != nil {
 		return nil, err
 	}
