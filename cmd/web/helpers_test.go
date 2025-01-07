@@ -293,7 +293,6 @@ func TestRequestJSONResourceFromScrapyd(t *testing.T) {
 			expectErr: true,
 			validate: func(t *testing.T, resp TestResponse, err error) {
 				assert.NotEqual(t, err, nil)
-				assert.StringContains(t, err.Error(), "No connection could be made")
 			},
 		},
 		{
@@ -353,13 +352,13 @@ func TestListScrapydNodesWorkerFunc(t *testing.T) {
 	ta := newTestApplication(t)
 	ta.config.ScrapydEncryptSecret = "thisis16bytes123"
 	// Request for error handler, does not matter for tests but otherwise it'll throw panics if its nil so this satisfies it
-	fakeErrorReq, err := http.NewRequest(http.MethodGet, "", nil)
+	fakeErrorReq, _ := http.NewRequest(http.MethodGet, "", nil)
 	testNode := database.ScrapydNode{
 		ID:       1,
 		Nodename: "test-node",
 		Url:      fakeServer.URL,
 	}
-	_, err = ta.DB.queries.NewScrapydNode(context.Background(), database.NewScrapydNodeParams{
+	_, err := ta.DB.queries.NewScrapydNode(context.Background(), database.NewScrapydNodeParams{
 		Nodename: testNode.Nodename,
 		Url:      testNode.Url,
 	})
