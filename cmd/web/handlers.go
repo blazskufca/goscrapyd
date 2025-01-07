@@ -59,17 +59,19 @@ const (
 	scrapydUniqueConstraintErr string = "Node with name %s and URL %s already exists"
 )
 
+type scrapydRequestType = string
+
 // Scrapyd endpoints/paths
 const (
-	ScrapydDaemonStatusReq string = "daemonstatus.json"
-	ScrapydListProjectsReq string = "listprojects.json"
-	ScrapydListSpidersReq  string = "listspiders.json"
-	ScrapydListJobsReq     string = "listjobs.json"
-	ScrapydLogStatsReq     string = "/logs/stats.json"
-	ScrapydScheduleSpider  string = "schedule.json"
-	ScrapydAddVersion      string = "addversion.json"
-	ScrapydStopSpider      string = "cancel.json"
-	ScrapydListVersions    string = "listversions.json"
+	scrapydDaemonStatusReq scrapydRequestType = "daemonstatus.json"
+	scrapydListProjectsReq scrapydRequestType = "listprojects.json"
+	scrapydListSpidersReq  scrapydRequestType = "listspiders.json"
+	scrapydListJobsReq     scrapydRequestType = "listjobs.json"
+	scrapydLogStatsReq     scrapydRequestType = "/logs/stats.json"
+	scrapydScheduleSpider  scrapydRequestType = "schedule.json"
+	scrapydAddVersion      scrapydRequestType = "addversion.json"
+	scrapydStopSpider      scrapydRequestType = "cancel.json"
+	scrapydListVersions    scrapydRequestType = "listversions.json"
 )
 
 var (
@@ -380,7 +382,7 @@ func (app *application) htmxFireForm(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case q.Has("node") && !q.Has("project"):
 		req, err := makeRequestToScrapyd(ctxwt, app.DB.queries, http.MethodGet, q.Get("node"), func(url *url.URL) *url.URL {
-			url.Path = path.Join(url.Path, ScrapydListProjectsReq)
+			url.Path = path.Join(url.Path, scrapydListProjectsReq)
 			return url
 		}, nil, nil, app.config.ScrapydEncryptSecret)
 		if err != nil {
@@ -396,7 +398,7 @@ func (app *application) htmxFireForm(w http.ResponseWriter, r *http.Request) {
 		tempData["Placeholder"] = "Select a Project"
 	case q.Has("node") && q.Has("project"):
 		req, err := makeRequestToScrapyd(ctxwt, app.DB.queries, http.MethodGet, q.Get("node"), func(url *url.URL) *url.URL {
-			url.Path = path.Join(url.Path, ScrapydListSpidersReq)
+			url.Path = path.Join(url.Path, scrapydListSpidersReq)
 			query := url.Query()
 			query.Add("project", q.Get("project"))
 			url.RawQuery = query.Encode()
@@ -542,10 +544,10 @@ func (app *application) stopJob(w http.ResponseWriter, r *http.Request) {
 		Prevstate string `json:"prevstate"`
 	}
 	req, err := makeRequestToScrapyd(ctxwt, app.DB.queries, http.MethodPost, r.PathValue("node"), func(blankUlr *url.URL) *url.URL {
-		query := url.Values{}
+		query := blankUlr.Query()
 		query.Add("project", r.PathValue("project"))
 		query.Add("job", r.PathValue("job"))
-		blankUlr.Path = path.Join(ScrapydStopSpider)
+		blankUlr.Path = path.Join(blankUlr.Path, scrapydStopSpider)
 		blankUlr.RawQuery = query.Encode()
 		return blankUlr
 	}, nil, nil, app.config.ScrapydEncryptSecret)
@@ -653,7 +655,7 @@ func (app *application) listVersionsHTMX(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	req, err := makeRequestToScrapyd(ctxwt, app.DB.queries, http.MethodGet, node, func(url *url.URL) *url.URL {
-		url.Path = path.Join(url.Path, ScrapydListVersions)
+		url.Path = path.Join(url.Path, scrapydListVersions)
 		query := url.Query()
 		query.Add("project", project)
 		url.RawQuery = query.Encode()

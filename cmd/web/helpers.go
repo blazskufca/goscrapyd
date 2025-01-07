@@ -152,7 +152,7 @@ func (app *application) listScrapydNodesWorkerFunc(ctx context.Context, r *http.
 		workResult.URL = node.Url
 		workResult.Id = node.ID
 		req, err := makeRequestToScrapyd(ctx, app.DB.queries, http.MethodGet, node.Nodename, func(url *url.URL) *url.URL {
-			url.Path = path.Join(url.Path, ScrapydDaemonStatusReq)
+			url.Path = path.Join(url.Path, scrapydDaemonStatusReq)
 			return url
 		}, nil, nil, app.config.ScrapydEncryptSecret)
 		if err != nil {

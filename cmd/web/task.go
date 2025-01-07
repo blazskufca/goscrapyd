@@ -115,7 +115,7 @@ func (t *Task) insertJobIntoDB(ctx context.Context) error {
 
 func (t *Task) createScrapydRequest(ctx context.Context) (*http.Request, error) {
 	return makeRequestToScrapyd(ctx, t.DB, http.MethodPost, t.NodeName, func(url *url.URL) *url.URL {
-		url.Path = path.Join(url.Path, ScrapydScheduleSpider)
+		url.Path = path.Join(url.Path, scrapydScheduleSpider)
 		url.RawQuery = t.SpiderValues.Encode()
 		return url
 	}, nil, &http.Header{

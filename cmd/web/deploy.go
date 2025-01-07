@@ -242,7 +242,7 @@ func (app *application) deployToNodeWorker(ctx context.Context, project string, 
 		}
 		req, err := makeRequestToScrapyd(ctx, app.DB.queries, http.MethodPost, job,
 			func(url *url.URL) *url.URL {
-				url.Path = path.Join(url.Path, ScrapydAddVersion)
+				url.Path = path.Join(url.Path, scrapydAddVersion)
 				return url
 			}, form, headers, app.config.ScrapydEncryptSecret)
 		if err != nil {

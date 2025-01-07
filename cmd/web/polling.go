@@ -128,7 +128,7 @@ func (tms *logParserTimeStampMilis) UnmarshalJSON(data []byte) error {
 func (app *application) requestScrapydWorkInfo(ctx context.Context, node string) error {
 	// Get the log parser stat JSON
 	req, err := makeRequestToScrapyd(ctx, app.DB.queries, http.MethodGet, node, func(url *url.URL) *url.URL {
-		url.Path = path.Join(url.Path, ScrapydLogStatsReq)
+		url.Path = path.Join(url.Path, scrapydLogStatsReq)
 		return url
 	}, nil, nil, app.config.ScrapydEncryptSecret)
 	if err != nil {
@@ -139,7 +139,7 @@ func (app *application) requestScrapydWorkInfo(ctx context.Context, node string)
 		return err
 	}
 	req, err = makeRequestToScrapyd(ctx, app.DB.queries, http.MethodGet, node, func(url *url.URL) *url.URL {
-		url.Path = path.Join(url.Path, ScrapydListJobsReq)
+		url.Path = path.Join(url.Path, scrapydListJobsReq)
 		return url
 	}, nil, nil, app.config.ScrapydEncryptSecret)
 	if err != nil {
@@ -255,7 +255,7 @@ func (app *application) updateAllNodesSchedule() error {
 	// Ping all the nodes, skip offline ones or where the request fails (unreachable node)
 	for _, node := range nodes {
 		req, err := makeRequestToScrapyd(ctx, app.DB.queries, http.MethodGet, node.Nodename, func(url *url.URL) *url.URL {
-			url.Path = path.Join(url.Path, ScrapydDaemonStatusReq)
+			url.Path = path.Join(url.Path, scrapydDaemonStatusReq)
 			return url
 		}, nil, nil, app.config.ScrapydEncryptSecret)
 		if err != nil {
