@@ -15,6 +15,9 @@ const (
 )
 
 func contextSetAuthenticatedUser(r *http.Request, user *database.User) *http.Request {
+	if r == nil {
+		return nil
+	}
 	ctx := context.WithValue(r.Context(), authenticatedUserContextKey, user)
 	return r.WithContext(ctx)
 }
