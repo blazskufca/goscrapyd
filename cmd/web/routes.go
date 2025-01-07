@@ -11,8 +11,6 @@ func (app *application) routes() http.Handler {
 	appMiddleware := alice.New(app.authenticate, app.rateLimit, app.logAccess)
 	reverseProxyMiddleware := alice.New(app.authenticate, app.logAccess)
 	// Authenticated, access logged, CSRF protected routes
-	mux.Handle("GET /add-node", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser).ThenFunc(app.insertNewScrapydNode))
-	mux.Handle("POST /add-node", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser).ThenFunc(app.insertNewScrapydNode))
 	mux.Handle("GET /add-task", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser).ThenFunc(app.createNewTask))
 	mux.Handle("POST /add-task", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser).ThenFunc(app.createNewTask))
 	mux.Handle("GET /add-user", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.addNewUser))
@@ -48,6 +46,8 @@ func (app *application) routes() http.Handler {
 	// This should come last because it's the general root route.
 	mux.Handle("GET /", appMiddleware.Append(app.requireAuthenticatedUser).Then(http.RedirectHandler("/list-nodes", http.StatusMovedPermanently)))
 	// Admin only routes
+	mux.Handle("GET /add-node", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.insertNewScrapydNode))
+	mux.Handle("POST /add-node", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.insertNewScrapydNode))
 	mux.Handle("GET /edit-settings", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.settingPage))
 	mux.Handle("POST /edit-settings", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.settingPage))
 	mux.Handle("GET /list-users", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.listsUsers))
