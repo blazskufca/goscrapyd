@@ -1,6 +1,31 @@
-{{define "page:title"}}Too many requests{{end}}
+{{define "page:title"}}Too Many Requests{{end}}
 
 {{define "page:main"}}
-<h1>Too many requests</h1>
-<p>You're issuing too many requests too fast, slow down!</p>
+<div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
+    <div class="w-full max-w-lg text-center">
+        <div class="mb-8">
+            <svg class="mx-auto h-16 w-16 text-yellow-500 dark:text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Too Many Requests</h1>
+        </div>
+
+        <div class="space-y-4">
+            <p class="text-base text-gray-600 dark:text-gray-400">
+                You're issuing too many requests too fast.
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                Please slow down and try again in a few moments.
+            </p>
+        </div>
+
+        <div class="mt-10">
+            <button
+                    onclick="window.location.reload()"
+                    class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-md shadow-sm transition-colors duration-200 dark:bg-yellow-500 dark:hover:bg-yellow-600">
+                Try Again
+            </button>
+        </div>
+    </div>
+</div>
 {{end}}

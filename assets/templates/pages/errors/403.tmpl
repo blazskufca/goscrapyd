@@ -1,22 +1,27 @@
 {{define "page:title"}}Forbidden{{end}}
 
 {{define "page:main"}}
-<div class="flex items-center justify-center min-h-[calc(100vh-5rem)]">
-    <div class="text-center">
-        <h1 class="text-4xl font-bold text-red-600 dark:text-red-500 mb-4">
-            403
-        </h1>
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-            Forbidden
-        </h2>
-        <p class="text-gray-600 dark:text-gray-400 mb-8">
-            Sorry, you're not allowed to access this page.
-        </p>
-        <div class="flex justify-center space-x-4">
-            <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+<div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
+    <div class="w-full max-w-lg text-center">
+        <div class="mb-8">
+            <svg class="mx-auto h-16 w-16 text-red-500 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h1 class="mt-4 text-4xl font-bold text-red-600 dark:text-red-500">403</h1>
+            <h2 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Forbidden</h2>
+        </div>
+
+        <div class="space-y-4">
+            <p class="text-base text-gray-600 dark:text-gray-400">
+                Sorry, you're not allowed to access this page.
+            </p>
+        </div>
+
+        <div class="mt-10 flex justify-center space-x-4">
+            <a href="/" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors duration-200 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Go Home
             </a>
-            <button onclick="history.back()" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+            <button onclick="history.back()" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors duration-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Go Back
             </button>
         </div>

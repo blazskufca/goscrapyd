@@ -66,8 +66,8 @@ func TestPanicMiddleware(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			handler.ServeHTTP(rr, tc.request)
 			assert.Equal(t, rr.Code, http.StatusInternalServerError)
-			assert.StringContains(t, strings.TrimSpace(rr.Body.String()), "<h1>Server error</h1>")
-			assert.StringContains(t, strings.TrimSpace(rr.Body.String()), "<p>Sorry, we are having a problem with our system. The error has been recorded and we will try to resolve it as soon as possible.</p>")
+			assert.StringContains(t, strings.TrimSpace(rr.Body.String()), "The error has been recorded, and we will work to resolve it as soon as possible.")
+			assert.StringContains(t, strings.TrimSpace(rr.Body.String()), "Sorry, we are experiencing an issue with our system.")
 		})
 	}
 }
@@ -306,8 +306,8 @@ func TestRateLimitMiddleware(t *testing.T) {
 				assert.Equal(t, rr.Body.String(), "OK")
 			} else {
 				assert.Equal(t, rr.Code, http.StatusTooManyRequests)
-				assert.StringContains(t, rr.Body.String(), "<h1>Too many requests</h1>")
-				assert.StringContains(t, rr.Body.String(), "<p>You're issuing too many requests too fast, slow down!</p>")
+				assert.StringContains(t, rr.Body.String(), "You're issuing too many requests too fast.")
+				assert.StringContains(t, rr.Body.String(), "Please slow down and try again in a few moments.")
 			}
 		}
 	})

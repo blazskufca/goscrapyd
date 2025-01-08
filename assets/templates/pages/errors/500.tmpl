@@ -1,6 +1,29 @@
-{{define "page:title"}}Server error{{end}}
+{{define "page:title"}}Server Error{{end}}
 
 {{define "page:main"}}
-<h1>Server error</h1>
-<p>Sorry, we are having a problem with our system. The error has been recorded and we will try to resolve it as soon as possible.</p>
+<div class="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
+    <div class="w-full max-w-lg text-center">
+        <div class="mb-8">
+            <svg class="mx-auto h-16 w-16 text-red-500 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h1 class="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Server Error</h1>
+        </div>
+
+        <div class="space-y-4">
+            <p class="text-base text-gray-600 dark:text-gray-400">
+                Sorry, we are experiencing an issue with our system.
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                The error has been recorded, and we will work to resolve it as soon as possible.
+            </p>
+        </div>
+
+        <div class="mt-10">
+            <a href="/" class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+                Return to Home
+            </a>
+        </div>
+    </div>
+</div>
 {{end}}
