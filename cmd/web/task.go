@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,6 +32,7 @@ type Task struct {
 	Logger       *slog.Logger
 	User         *database.User
 	OneTimeJob   bool
+	mu           *sync.Mutex
 }
 
 type scrapydScheduleResponse struct {
@@ -57,6 +59,7 @@ func newTask(oneTimeJob bool, taskID *uuid.UUID, db *database.Queries, taskName,
 		OneTimeJob:   oneTimeJob,
 		User:         user,
 		Secret:       secret,
+		mu:           &sync.Mutex{},
 	}
 
 	if taskID == nil {
@@ -137,6 +140,8 @@ func (t *Task) scheduleSpider(req *http.Request) error {
 }
 
 func (t *Task) beforeJobRuns(jobID uuid.UUID, jobName string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if t.OneTimeJob {
 		t.JobID = fmt.Sprintf("one_time_job_%s_%s_%s", t.Spider, t.NodeName, time.Now().Format("2006-01-02T15_04_05"))
 	} else {
