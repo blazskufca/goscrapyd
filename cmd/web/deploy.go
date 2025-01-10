@@ -158,7 +158,7 @@ func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	egg, err := app.eggBuildFunc(ctxwc, cookieData.ProjectLocation)
+	egg, err := app.eggBuildFunc(ctxwc, app.config.pythonPath, cookieData.ProjectLocation)
 	if err != nil {
 		app.reportServerError(r, err)
 		app.writeSSEResponse(w, r, flusher, err, buildFailedSSE, "build_error", "sse:BuildFailed")
@@ -262,7 +262,7 @@ func (app *application) deployToNodeWorker(ctx context.Context, project string, 
 	}
 }
 
-func (app *application) buildEggInternal(ctx context.Context, scrapyCfg string) ([]byte, error) {
+func buildEggInternal(ctx context.Context, pythonPath, scrapyCfg string) ([]byte, error) {
 	pythonScript, err := assets.EmbeddedFiles.ReadFile("build_egg.py")
 	if err != nil {
 		return nil, fmt.Errorf("error reading embedded Python script: %v", err)
@@ -275,7 +275,7 @@ func (app *application) buildEggInternal(ctx context.Context, scrapyCfg string) 
 	// out more in a lot of editors
 
 	// I think this is again a gosec false positive, scrapyCfg is verified with helpers.sanitizePath on form submission
-	cmd := exec.CommandContext(ctx, app.config.pythonPath, "-c", string(pythonScript), scrapyCfg) // #nosec G204
+	cmd := exec.CommandContext(ctx, pythonPath, "-c", string(pythonScript), scrapyCfg) // #nosec G204
 	out := new(bytes.Buffer)
 	stderr := new(bytes.Buffer)
 	cmd.Stdout = out
