@@ -158,7 +158,7 @@ func (app *application) buildAndDeployEggSSE(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	egg, err := app.buildEggInternal(ctxwc, cookieData.ProjectLocation)
+	egg, err := app.eggBuildFunc(ctxwc, cookieData.ProjectLocation)
 	if err != nil {
 		app.reportServerError(r, err)
 		app.writeSSEResponse(w, r, flusher, err, buildFailedSSE, "build_error", "sse:BuildFailed")

@@ -106,6 +106,7 @@ type application struct {
 	reverseProxy  *httputil.ReverseProxy
 	globalMu      sync.Mutex
 	templateCache map[templateName]*template.Template
+	eggBuildFunc  func(ctx context.Context, scrapyCfg string) ([]byte, error)
 }
 
 func run(logger *slog.Logger) error {
@@ -189,6 +190,7 @@ func run(logger *slog.Logger) error {
 		}{queries: databaseQueries, dbConn: databaseConnection},
 		templateCache: templateCache,
 	}
+	app.eggBuildFunc = app.buildEggInternal
 	app.reverseProxy = &httputil.ReverseProxy{
 		Rewrite:       proxyRewriter,
 		FlushInterval: -1,
