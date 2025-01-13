@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"github.com/blazskufca/goscrapyd/assets"
 	"github.com/justinas/alice"
 	"net/http"
@@ -38,8 +39,8 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /logout", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.logout))
 	mux.Handle("GET /htmx-fire-form", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.htmxFireForm))
 	mux.Handle("DELETE /{node}/stop-job/{project}/{job}", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.stopJob))
-	mux.Handle("GET /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).ThenFunc(app.reverseProxy.ServeHTTP))
-	mux.Handle("POST /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).ThenFunc(app.reverseProxy.ServeHTTP))
+	mux.Handle("GET /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).Then(app.reverseProxy))
+	mux.Handle("POST /{node}/scrapyd-backend/", reverseProxyMiddleware.Append(app.requireAuthenticatedUser, app.reverseProxyMiddleware).Then(app.reverseProxy))
 	mux.Handle("POST /{node}/job/search", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.searchJobs))
 	mux.Handle("GET /versions", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersions))
 	mux.Handle("GET /versions-htmx", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersionsHTMX))
@@ -57,11 +58,13 @@ func (app *application) routes() http.Handler {
 	mux.Handle("DELETE /delete-node/{node}", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.deleteScrapydNode))
 	mux.Handle("GET /node/edit/{node}", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.editNode))
 	mux.Handle("POST /node/edit/{node}", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.editNode))
+	mux.Handle("GET /metrics", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.metricsHandler))
+	mux.Handle("GET /metrics/json", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).Then(expvar.Handler()))
 	// Anonymous user routes
 	mux.Handle("GET /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))
 	mux.Handle("POST /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))
 	fileServer := http.FileServer(http.FS(assets.EmbeddedFiles))
 	mux.Handle("GET /ui/static/", http.StripPrefix("/ui", fileServer))
-	defaultMiddleware := alice.New(app.recoverPanic, app.securityHeaders)
+	defaultMiddleware := alice.New(app.metricsMiddleware, app.recoverPanic, app.securityHeaders)
 	return defaultMiddleware.Then(mux)
 }

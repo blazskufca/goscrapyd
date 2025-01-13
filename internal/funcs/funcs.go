@@ -24,6 +24,7 @@ const (
 var printer = message.NewPrinter(language.English)
 
 var TemplateFuncs = template.FuncMap{
+	"hasPrefix": strings.HasPrefix,
 	// Time functions
 	"now":            time.Now,
 	"timeSince":      time.Since,

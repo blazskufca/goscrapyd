@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"expvar"
 	"fmt"
 	"github.com/blazskufca/goscrapyd/internal/response"
 	"github.com/blazskufca/goscrapyd/internal/validator"
@@ -14,9 +15,17 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+)
+
+var (
+	totalRequestsReceived           = expvar.NewInt("total_requests_received")
+	totalResponsesSent              = expvar.NewInt("total_responses_sent")
+	totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
+	totalResponsesSentByStatus      = expvar.NewMap("total_responses_sent_by_status")
 )
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {
@@ -236,5 +245,18 @@ func (app *application) requirePermission(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) metricsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		totalRequestsReceived.Add(1)
+		mw := response.NewMetricsResponseWriter(w)
+		next.ServeHTTP(mw, r)
+		totalResponsesSent.Add(1)
+		totalResponsesSentByStatus.Add(strconv.Itoa(mw.StatusCode), 1)
+		duration := time.Since(start).Microseconds()
+		totalProcessingTimeMicroseconds.Add(duration)
 	})
 }

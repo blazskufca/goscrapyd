@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/gob"
+	"expvar"
 	"flag"
 	"fmt"
 	"github.com/blazskufca/goscrapyd/assets"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -31,6 +33,13 @@ import (
 func init() {
 	gob.Register(uuid.UUID{})
 	gob.Register(deployCookieType{})
+	expvar.NewString("buildFromCommit").Set(version.Get())
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 }
 
 func main() {
@@ -178,6 +187,9 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	expvar.Publish("database", expvar.Func(func() any {
+		return databaseConnection.Stats()
+	}))
 	app := &application{
 		config:       cfg,
 		logger:       logger,

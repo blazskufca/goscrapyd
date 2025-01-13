@@ -52,6 +52,7 @@ const (
 	htmxListNodes          templateName = "htmx_nodes_list.tmpl"
 	versionsPage           templateName = "versions.tmpl"
 	versionsPageHtmx       templateName = "htmx_versions.tmpl"
+	metricsPage            templateName = "metrics.tmpl"
 )
 
 // Other various misc strings
