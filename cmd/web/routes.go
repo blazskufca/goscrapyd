@@ -58,7 +58,7 @@ func (app *application) routes() http.Handler {
 	mux.Handle("DELETE /delete-node/{node}", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.deleteScrapydNode))
 	mux.Handle("GET /node/edit/{node}", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.editNode))
 	mux.Handle("POST /node/edit/{node}", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.editNode))
-	mux.Handle("GET /metrics", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.metricsHandler))
+	mux.Handle("GET /metrics", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.metricsHandler))
 	mux.Handle("GET /metrics/json", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).Then(expvar.Handler()))
 	// Anonymous user routes
 	mux.Handle("GET /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))

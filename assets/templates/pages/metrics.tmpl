@@ -13,8 +13,8 @@
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     Total Metrics
                 </dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
-                    {{len .Metrics}}
+                <dd id="metricsCount" class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
+                    <!-- Populated by JavaScript -->
                 </dd>
             </div>
         </div>
@@ -23,8 +23,8 @@
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     Last Updated
                 </dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
-                    {{now | formatTime "15:04:05"}}
+                <dd id="lastUpdated" class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
+                    <!-- Populated by JavaScript -->
                 </dd>
             </div>
         </div>
@@ -45,8 +45,8 @@
             <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Detailed Metrics</h2>
             <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">A comprehensive list of all system metrics</p>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -57,31 +57,17 @@
                     </th>
                 </tr>
                 </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {{range .Metrics}}
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {{.Key}}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {{if hasPrefix .Value "{"}}
-                        <details>
-                            <summary class="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">View Details</summary>
-                            <pre class="mt-2 whitespace-pre-wrap text-xs">{{.Value}}</pre>
-                        </details>
-                        {{else}}
-                        {{.Value}}
-                        {{end}}
-                    </td>
-                </tr>
-                {{end}}
+                <tbody id="metricsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- Populated by JavaScript -->
                 </tbody>
             </table>
         </div>
     </div>
 
     <div class="mt-8 text-sm text-gray-600 dark:text-gray-400">
-        Last updated: {{now | formatTime "2006-01-02 15:04:05"}}
+        Last updated: <span id="lastRefreshed"></span>
     </div>
 </div>
+
+<script src="/ui/static/js/metrics_table.min.js"></script>
 {{end}}
