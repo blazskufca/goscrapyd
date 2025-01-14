@@ -29,13 +29,10 @@ class MetricsManager {
     }
 
     formatValue(value) {
-        if (typeof value === 'number') {
-            return value.toLocaleString(this.userLocale);
-        }
         if (value instanceof Date) {
             return this.formatDateTime(value);
         }
-        if (typeof value === 'object') {
+        if (typeof value === 'object' && value !== null) {
             return JSON.stringify(value, null, 2);
         }
         return value;
