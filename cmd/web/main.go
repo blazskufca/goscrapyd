@@ -235,6 +235,9 @@ func run(logger *slog.Logger) error {
 	if cfg.autoHTTPS.domain != "" {
 		return app.serveAutoHTTPS()
 	}
+	expvar.Publish("total_number_of_tasks_in_the_scheduler", expvar.Func(func() any {
+		return len(app.scheduler.Jobs())
+	}))
 	return app.serveHTTP()
 }
 
