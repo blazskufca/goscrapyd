@@ -52,7 +52,7 @@
                 <p class="text-gray-500 dark:text-gray-400">
                     <strong>Last Run:</strong>
                     {{if .JobFinish.Valid}}
-                    {{.JobFinish.Time}}
+                    {{formatTime "2006-01-02 15:04:05" .JobFinish.Time}}
                     {{else}}
                     N/A
                     {{end}}
@@ -61,7 +61,7 @@
             </div>
             <div>
                 <p class="text-gray-500 dark:text-gray-400"><strong>Last run items:</strong> {{if .JobItems.Valid}}{{.JobItems.Int64}}{{else}}N/A{{end}}</p>
-                <p class="text-gray-500 dark:text-gray-400"><strong>Task created at:</strong> {{if .TaskCreateTime}}{{.TaskCreateTime}}{{else}}N/A{{end}}</p>
+                <p class="text-gray-500 dark:text-gray-400"><strong>Task created at:</strong> {{if .TaskCreateTime}}{{formatTime "2006-01-02 15:04:05" .TaskCreateTime}}{{else}}N/A{{end}}</p>
                 <p class="text-gray-500 dark:text-gray-400"><strong>Task last modified by:</strong> {{if .ModifiedByUsername.Valid}}{{.ModifiedByUsername.String}}{{else}}<i>Not yet modified...</i>{{end}}</p>
                 <!--                <p class="text-gray-500 dark:text-gray-400"><strong>Created At:</strong> placeholder </p>-->
             </div>

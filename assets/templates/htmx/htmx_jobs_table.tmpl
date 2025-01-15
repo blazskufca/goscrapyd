@@ -1,39 +1,54 @@
 {{define "htmx:jobsTable"}}
 <!-- Errored Jobs -->
 {{if .ErrorJobs}}
-<tr><th colspan="13" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Errored</th></tr>
+<tr>
+    <th colspan="14" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Errored</th>
+</tr>
 {{range .ErrorJobs}}
 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Project}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Spider}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Job}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                    {{if .Status}}{{.Status}}{{else}}Error{{end}}
-                </span>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Deleted }}True{{else}}False{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{.Start.Time}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .UpdateTime}}{{.UpdateTime}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-        <button class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors duration-300" type="button" data-collapse-toggle="task-{{.ID}}-error">View Error</button>
-        <button class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300" hx-target="closest tr" hx-delete="/delete-job/{{.Job}}" hx-confirm="Are you sure you wish to delete job '{{.Job}}' for spider '{{.Spider}}'">Delete</button>
-        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
-        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}" class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Items</a>{{end}}
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Task not stopped yet...</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <button class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 transition-colors duration-300"
+                type="button" data-collapse-toggle="task-{{.ID}}-error">View Error
+        </button>
+        <button class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300"
+                hx-delete="/delete-job/{{.Job}}" hx-target="closest tr"
+                hx-confirm="Are you sure you want to delete job result '{{.Job}}' for spider '{{.Spider}}'">Delete
+        </button>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{formatTime .Start.Time "2006-01-02 15:04:05"}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}Unknown{{end}}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Finish.Valid}}{{formatTime .Finish.Time "2006-01-02 15:04:05"}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{formatTime "2006-01-02 15:04:05" .UpdateTime }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Not running</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
+        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}"
+                                  class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View
+        Items</a>{{end}}
+
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{else}}Unknown...{{end}}
+    </i>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Unknown...</i></td>
 </tr>
 {{if .Error.Valid}}
 <tr class="hidden bg-gray-50 dark:bg-gray-700" id="task-{{.ID}}-error">
-    <td colspan="13" class="px-6 py-4">
+    <td colspan="14" class="px-6 py-4">
         <div class="bg-red-50 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-200 p-4 rounded-md shadow-md">
             <div class="flex items-center mb-2">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clip-rule="evenodd"></path>
                 </svg>
                 <p class="font-bold">Error Details</p>
             </div>
@@ -44,58 +59,64 @@
 {{end}}{{end}}{{end}}
 <!-- Pending Jobs -->
 {{if .PendingJobs}}
-<tr><th colspan="13" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Pending</th></tr>
+<tr>
+    <th colspan="14" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Pending</th>
+</tr>
 {{range .PendingJobs}}
 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Project}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Spider}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Job}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    {{if .Status}}{{.Status}}{{else}}Pending{{end}}
-                </span>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Deleted }}True{{else}}False{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{.Start.Time}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .UpdateTime}}{{.UpdateTime}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">
         <button
-                hx-post="/{{$.NodeName}}/stop-job/{{.Project}}/{{.Job}}"
+                hx-post="/{{$.Nodename}}/scrapyd-backend/cancel.json"
+                hx-vals='{"project": "{{.Project}}", "job": "{{.Job}}"}'
                 hx-swap="none"
                 hx-trigger="click"
                 hx-confirm="Are you sure you wish to cancel job '{{.Job}}' for spider '{{.Spider}}?
 
-Send again to force."
+        Send again to force."
                 class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">
             Cancel Job
         </button>
-        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
-        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}" class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Items</a>{{end}}
+
     </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Task not stopped yet...</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{ formatTime "2006-01-02 15:04:05" .Start.Time}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Unknown...</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{formatTime "2006-01-02 15:04:05" .UpdateTime }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Not running</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
+        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}"
+                                  class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View
+        Items</a>{{end}}
+
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{else}}Unknown...{{end}}
+    </i>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StoppedByUsername.Valid}}{{.StoppedByUsername.String}}{{else}}Task not stopped yet...{{end}}</i></td>
 </tr>
 {{end}}{{end}}
+
 {{ if .RunningJobs}}
 <!-- Running Jobs -->
-<tr><th colspan="13" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Running</th></tr>
+<tr>
+    <th colspan="14" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Running</th>
+</tr>
 {{range .RunningJobs}}
 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Project}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Spider}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Job}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {{if .Status}}{{.Status}}{{else}}Running{{end}}
-                </span>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Deleted }}True{{else}}False{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{.Start.Time}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .UpdateTime}}{{.UpdateTime}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">
         <button
                 hx-delete="/{{$.NodeName}}/stop-job/{{.Project}}/{{.Job}}"
@@ -106,41 +127,68 @@ Send again to force."
                 class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">
             Stop Job
         </button>
-        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
-        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}" class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Items</a>{{end}}
     </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Task not stopped yet...</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{ formatTime "2006-01-02 15:04:05" .Start.Time}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}Unknown{{end}}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Unknown...</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{formatTime "2006-01-02 15:04:05" .UpdateTime }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pid.Valid}}{{.Pid.Int64}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
+        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}"
+                                  class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View
+        Items</a>{{end}}
+
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{else}}Unknown...{{end}}
+    </i>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StoppedByUsername.Valid}}{{.StoppedByUsername.String}}{{else}}Task not stopped yet...{{end}}</i></td>
+
 </tr>
 {{end}}{{end}}
 
 {{if .FinishedJobs}}
 <!-- Finished Jobs -->
-<tr><th colspan="13" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Finished</th></tr>
+<tr>
+    <th colspan="14" class="px-6 py-3 bg-gray-100 dark:bg-gray-600 font-semibold">Finished</th>
+</tr>
 {{range .FinishedJobs}}
 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Project}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Spider}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{.Job}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    {{if .Status}}{{.Status}}{{else}}Finished{{end}}
-                </span>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Deleted }}True{{else}}False{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{.Start.Time}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .UpdateTime}}{{.UpdateTime}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-        <button class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300" hx-delete="/delete-job/{{.Job}}" hx-target="closest tr" hx-confirm="Are you sure you want to delete job result '{{.Job}}' for spider '{{.Spider}}'">Delete</button>
-        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
-        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}" class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Items</a>{{end}}
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
     <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Pages.Valid}}{{.Pages.Int64}}{{else}}N/A{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{end}}</td>
-    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .StoppedByUsername.Valid}}{{.StoppedByUsername.String}}{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Items.Valid}}{{.Items.Int64}}{{else}}N/A{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <button class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300"
+                hx-delete="/delete-job/{{.Job}}" hx-target="closest tr"
+                hx-confirm="Are you sure you want to delete job result '{{.Job}}' for spider '{{.Spider}}'">Delete
+        </button>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Start.Valid}}{{ formatTime "2006-01-02 15:04:05" .Start.Time}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Runtime.Valid}}{{.Runtime.String}}{{else}}Unknown{{end}}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{if .Finish.Valid}}{{ formatTime "2006-01-02 15:04:05" .Finish.Time}}{{else}}Unknown{{end}}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">{{formatTime "2006-01-02 15:04:05" .UpdateTime }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>Not running</i></td>
+    <td class="px-6 py-4 whitespace-nowrap text-center">
+        <a href="/job/view-logs/{{.Job}}" class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View Logs</a>
+        {{if .HrefItems.Valid}}<a href="{{.HrefItems.String}}"
+                                  class="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded hover:bg-red-600 transition-colors duration-300">View
+        Items</a>{{end}}
+
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StartedByUsername.Valid}}{{.StartedByUsername.String}}{{else}}Unknown...{{end}}
+    </i>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-center"><i>{{if
+        .StoppedByUsername.Valid}}{{.StoppedByUsername.String}}{{else}}Unknown...{{end}}</i></td>
 </tr>
 {{end}}{{end}}{{end}}
