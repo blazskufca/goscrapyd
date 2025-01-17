@@ -80,11 +80,11 @@ func (app *application) createNewTask(w http.ResponseWriter, r *http.Request) {
 		cleanForm := cleanUrlValues(r.PostForm, "fireNode", "csrf_token", "cron_input", "task_name", "immediately")
 		var result []gocron.Job
 		for _, node := range formData.FireNodes {
-			createdTask, err := newTask(false, nil, app.DB.queries, formData.TaskName, formData.Spider, formData.Project, node, app.logger, cleanForm, nil, app.config.ScrapydEncryptSecret)
+			createdTask, err := app.newTask(false, nil, formData.TaskName, formData.Spider, formData.Project, node, cleanForm, nil)
 			if app.checkCreateTaskError(w, r, createdTask, err) {
 				return
 			}
-			cronJob, err := app.scheduler.NewJob(createdTask.newCronJob(formData.CronTab))
+			cronJob, err := createdTask.newCronJob(formData.CronTab)
 			if err != nil {
 				app.serverError(w, r, err)
 				return
@@ -163,7 +163,7 @@ func (app *application) fireTask(w http.ResponseWriter, r *http.Request) {
 		app.renderHTMX(w, r, http.StatusOK, htmxParagraph, nil, "htmx:Paragraph", data)
 	} else {
 		data := app.newTemplateData(r)
-		data["ParagraphText"] = fmt.Sprintf("Task with UUUID %v (job name: %v) not found (This is an error!)", task.ID(), task.Name())
+		data["ParagraphText"] = fmt.Sprintf("task with UUUID %v (job name: %v) not found (This is an error!)", task.ID(), task.Name())
 		app.renderHTMX(w, r, http.StatusOK, htmxParagraph, nil, "htmx:Paragraph", data)
 	}
 }
@@ -340,13 +340,11 @@ func (app *application) editTask(w http.ResponseWriter, r *http.Request) {
 		cleanForm := cleanUrlValues(r.PostForm, "fireNode", "csrf_token", "cron_input", "task_name", "immediately")
 		if exists, _ := app.isTaskRunning(taskAsUUID); exists {
 			isPaused = false
-			replacedTask, err := newTask(false, &taskAsUUID, app.DB.queries, formData.TaskName, formData.Spider, formData.Project, formData.FireNodes[0], app.logger, cleanForm, nil, app.config.ScrapydEncryptSecret)
+			replacedTask, err := app.newTask(false, &taskAsUUID, formData.TaskName, formData.Spider, formData.Project, formData.FireNodes[0], cleanForm, nil)
 			if app.checkCreateTaskError(w, r, replacedTask, err) {
 				return
 			}
-			newTaskJobDefinition, newTaskWorkerFunc, newTaskTaskName, newTaskTaskIdtf, newTaskEventListner := replacedTask.newCronJob(formData.CronTab)
-			_, err = app.scheduler.Update(taskAsUUID, newTaskJobDefinition, newTaskWorkerFunc, newTaskTaskName,
-				newTaskTaskIdtf, newTaskEventListner)
+			_, err = replacedTask.updatesResource(taskAsUUID, formData.CronTab)
 			if err != nil {
 				app.serverError(w, r, err)
 				return
@@ -422,11 +420,11 @@ func (app *application) restartTask(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, err)
 		return
 	}
-	restartedTask, err := newTask(false, &taskUUID, app.DB.queries, taskName, taskDb.Spider, taskDb.Project, taskDb.SelectedNodes, app.logger, values, nil, app.config.ScrapydEncryptSecret)
+	restartedTask, err := app.newTask(false, &taskUUID, taskName, taskDb.Spider, taskDb.Project, taskDb.SelectedNodes, values, nil)
 	if app.checkCreateTaskError(w, r, restartedTask, err) {
 		return
 	}
-	cronJob, err := app.scheduler.NewJob(restartedTask.newCronJob(taskDb.CronString))
+	cronJob, err := restartedTask.newCronJob(taskDb.CronString)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

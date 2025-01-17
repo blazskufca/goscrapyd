@@ -66,7 +66,7 @@ func (app *application) badRequest(w http.ResponseWriter, r *http.Request, err e
 	}
 }
 
-func (app *application) checkCreateTaskError(w http.ResponseWriter, r *http.Request, task *Task, err error) bool {
+func (app *application) checkCreateTaskError(w http.ResponseWriter, r *http.Request, task *task, err error) bool {
 	if err != nil {
 		app.serverError(w, r, err)
 		return true

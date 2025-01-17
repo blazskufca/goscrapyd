@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-type Task struct {
+type task struct {
 	ID           uuid.UUID
 	JobID        string
 	Project      string
@@ -33,6 +33,7 @@ type Task struct {
 	User         *database.User
 	OneTimeJob   bool
 	mu           *sync.Mutex
+	scheduler    gocron.Scheduler
 }
 
 type scrapydScheduleResponse struct {
@@ -41,16 +42,10 @@ type scrapydScheduleResponse struct {
 	Jobid    string `json:"jobid"`
 }
 
-func newTask(oneTimeJob bool, taskID *uuid.UUID, db *database.Queries, taskName, spider, project, nodeName string,
-	logger *slog.Logger, spiderValues url.Values, user *database.User, secret string) (*Task, error) {
-
-	if db == nil {
-		return nil, errors.New("database is required")
-	}
-
-	t := &Task{
-		DB:           db,
-		Logger:       logger,
+func (app *application) newTask(oneTimeJob bool, taskID *uuid.UUID, taskName, spider, project, nodeName string, spiderValues url.Values, user *database.User) (*task, error) {
+	t := &task{
+		DB:           app.DB.queries,
+		Logger:       app.logger,
 		Project:      project,
 		Spider:       spider,
 		NodeName:     nodeName,
@@ -58,8 +53,9 @@ func newTask(oneTimeJob bool, taskID *uuid.UUID, db *database.Queries, taskName,
 		TaskName:     taskName,
 		OneTimeJob:   oneTimeJob,
 		User:         user,
-		Secret:       secret,
+		Secret:       app.config.ScrapydEncryptSecret,
 		mu:           &sync.Mutex{},
+		scheduler:    app.scheduler,
 	}
 
 	if taskID == nil {
@@ -75,7 +71,16 @@ func newTask(oneTimeJob bool, taskID *uuid.UUID, db *database.Queries, taskName,
 	return t, nil
 }
 
-func (t *Task) fireFunc() error {
+func (t *task) removeOneTimeJobFromScheduler(jobid uuid.UUID) {
+	if t.OneTimeJob {
+		err := t.scheduler.RemoveJob(jobid)
+		if err != nil {
+			t.Logger.Error("Error removing job from scheduler", "jobid", jobid, "err", err)
+		}
+	}
+}
+
+func (t *task) fireFunc() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -95,7 +100,7 @@ func (t *Task) fireFunc() error {
 	return nil
 }
 
-func (t *Task) insertJobIntoDB(ctx context.Context) error {
+func (t *task) insertJobIntoDB(ctx context.Context) error {
 	insertParam := database.InsertJobParams{
 		Project:    t.Project,
 		Spider:     t.Spider,
@@ -116,7 +121,7 @@ func (t *Task) insertJobIntoDB(ctx context.Context) error {
 	return err
 }
 
-func (t *Task) createScrapydRequest(ctx context.Context) (*http.Request, error) {
+func (t *task) createScrapydRequest(ctx context.Context) (*http.Request, error) {
 	return makeRequestToScrapyd(ctx, t.DB, http.MethodPost, t.NodeName, func(url *url.URL) *url.URL {
 		url.Path = path.Join(url.Path, scrapydScheduleSpider)
 		url.RawQuery = t.SpiderValues.Encode()
@@ -126,7 +131,7 @@ func (t *Task) createScrapydRequest(ctx context.Context) (*http.Request, error) 
 	}, t.Secret)
 }
 
-func (t *Task) scheduleSpider(req *http.Request) error {
+func (t *task) scheduleSpider(req *http.Request) error {
 	scheduleResp, err := requestJSONResourceFromScrapyd[scrapydScheduleResponse](req, t.Logger)
 	if err != nil {
 		return err
@@ -139,7 +144,7 @@ func (t *Task) scheduleSpider(req *http.Request) error {
 	return nil
 }
 
-func (t *Task) beforeJobRuns(jobID uuid.UUID, jobName string) {
+func (t *task) beforeJobRuns(jobID uuid.UUID, jobName string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.OneTimeJob {
@@ -147,18 +152,16 @@ func (t *Task) beforeJobRuns(jobID uuid.UUID, jobName string) {
 	} else {
 		t.JobID = fmt.Sprintf("task_%s_%s_%s", t.Spider, t.NodeName, time.Now().Format("2006-01-02T15_04_05"))
 	}
-	if !t.SpiderValues.Has("jobid") {
-		t.SpiderValues.Set("jobid", t.JobID)
-	} else {
-		t.SpiderValues.Set("jobid", t.JobID)
-	}
+	t.SpiderValues.Set("jobid", t.JobID)
 }
 
-func (t *Task) afterTaskRunsWithSuccess(jobID uuid.UUID, jobName string) {
+func (t *task) afterTaskRunsWithSuccess(jobID uuid.UUID, jobName string) {
+	defer t.removeOneTimeJobFromScheduler(jobID)
 	t.Logger.Debug("task started successfully", slog.Any("jobID", jobID), slog.Any("jobName", jobName))
 }
 
-func (t *Task) afterTaskRunsWithError(jobID uuid.UUID, jobName string, err error) {
+func (t *task) afterTaskRunsWithError(jobID uuid.UUID, jobName string, err error) {
+	defer t.removeOneTimeJobFromScheduler(jobID)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -183,26 +186,38 @@ func (t *Task) afterTaskRunsWithError(jobID uuid.UUID, jobName string, err error
 	}
 }
 
-func (t *Task) afterTaskPanics(jobID uuid.UUID, jobName string, recoverData any) {
+func (t *task) afterTaskPanics(jobID uuid.UUID, jobName string, recoverData any) {
+	defer t.removeOneTimeJobFromScheduler(jobID)
 	t.Logger.Error("PANIC IN TASK", slog.Any("jobID", jobID), slog.Any("jobName", jobName), "recoverData", recoverData)
 }
 
-func (t *Task) newEventListener() gocron.JobOption {
-	return gocron.WithEventListeners(
-		gocron.BeforeJobRuns(t.beforeJobRuns),
-		gocron.AfterJobRuns(t.afterTaskRunsWithSuccess),
-		gocron.AfterJobRunsWithError(t.afterTaskRunsWithError),
-		gocron.AfterJobRunsWithPanic(t.afterTaskPanics),
-	)
-}
-
-func (t *Task) newOneTimeJob() (gocron.JobDefinition, gocron.Task, gocron.JobOption, gocron.JobOption, gocron.JobOption) {
-	return gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()),
+func (t *task) newOneTimeJob() (job gocron.Job, err error) {
+	return t.scheduler.NewJob(gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()),
 		gocron.NewTask(t.fireFunc), gocron.WithName(t.TaskName), gocron.WithIdentifier(t.ID),
-		t.newEventListener()
+		gocron.WithEventListeners(
+			gocron.BeforeJobRuns(t.beforeJobRuns),
+			gocron.AfterJobRuns(t.afterTaskRunsWithSuccess),
+			gocron.AfterJobRunsWithError(t.afterTaskRunsWithError),
+			gocron.AfterJobRunsWithPanic(t.afterTaskPanics),
+		))
 }
 
-func (t *Task) newCronJob(schedule string) (gocron.JobDefinition, gocron.Task, gocron.JobOption, gocron.JobOption, gocron.JobOption) {
-	return gocron.CronJob(schedule, false), gocron.NewTask(t.fireFunc),
-		gocron.WithName(t.TaskName), gocron.WithIdentifier(t.ID), t.newEventListener()
+func (t *task) newCronJob(schedule string) (job gocron.Job, err error) {
+	return t.scheduler.NewJob(gocron.CronJob(schedule, false), gocron.NewTask(t.fireFunc),
+		gocron.WithName(t.TaskName), gocron.WithIdentifier(t.ID), gocron.WithEventListeners(
+			gocron.BeforeJobRuns(t.beforeJobRuns),
+			gocron.AfterJobRuns(t.afterTaskRunsWithSuccess),
+			gocron.AfterJobRunsWithError(t.afterTaskRunsWithError),
+			gocron.AfterJobRunsWithPanic(t.afterTaskPanics),
+		))
+}
+
+func (t *task) updatesResource(toUpdate uuid.UUID, schedule string) (job gocron.Job, err error) {
+	return t.scheduler.Update(toUpdate, gocron.CronJob(schedule, false), gocron.NewTask(t.fireFunc),
+		gocron.WithName(t.TaskName), gocron.WithIdentifier(t.ID), gocron.WithEventListeners(
+			gocron.BeforeJobRuns(t.beforeJobRuns),
+			gocron.AfterJobRuns(t.afterTaskRunsWithSuccess),
+			gocron.AfterJobRunsWithError(t.afterTaskRunsWithError),
+			gocron.AfterJobRunsWithPanic(t.afterTaskPanics),
+		))
 }

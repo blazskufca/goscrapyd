@@ -352,12 +352,13 @@ func (app *application) fireSpider(w http.ResponseWriter, r *http.Request) {
 		var results []OneTimeFireResult
 		for _, node := range fullQuery.Node {
 			jobResult := OneTimeFireResult{Node: node}
-			currentTask, err := newTask(true, nil, app.DB.queries, fmt.Sprintf("One time job for spider %s on node %s",
-				fullQuery.Spider, node), fullQuery.Spider, fullQuery.Project, node, app.logger, cleanForm, contextGetAuthenticatedUser(r), app.config.ScrapydEncryptSecret)
+			currentTask, err := app.newTask(true, nil, fmt.Sprintf("One time job for spider %s on node %s",
+				fullQuery.Spider, node), fullQuery.Spider, fullQuery.Project, node, cleanForm,
+				contextGetAuthenticatedUser(r))
 			if app.checkCreateTaskError(w, r, currentTask, err) {
 				return
 			}
-			cronJob, err := app.scheduler.NewJob(currentTask.newOneTimeJob())
+			cronJob, err := currentTask.newOneTimeJob()
 			if err != nil {
 				jobResult.Error = err
 			} else {

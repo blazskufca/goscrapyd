@@ -21,6 +21,7 @@ func TestTask_Integration(t *testing.T) {
 	scheduler, err := gocron.NewScheduler(gocron.WithClock(fakeClock))
 	assert.NilError(t, err)
 	scheduler.Start()
+	app.scheduler = scheduler
 
 	t.Run("One time job", func(t *testing.T) {
 		mockScrapyd := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,29 +53,18 @@ func TestTask_Integration(t *testing.T) {
 		})
 		assert.NilError(t, err)
 		taskID := uuid.New()
-		task, err := newTask(
+		createdTask, err := app.newTask(
 			true,
 			&taskID,
-			app.DB.queries,
 			"test_integration_task",
 			"test_spider",
 			"test_project",
 			"test_node",
-			app.logger,
 			spiderValues,
 			nil,
-			"test_secret",
 		)
 		assert.NilError(t, err)
-
-		jobDef, taskFunc, nameOpt, idOpt, eventOpt := task.newOneTimeJob()
-		_, err = scheduler.NewJob(
-			jobDef,
-			taskFunc,
-			nameOpt,
-			idOpt,
-			eventOpt,
-		)
+		_, err = createdTask.newOneTimeJob()
 		assert.NilError(t, err)
 		// README: There some kind of a race between goose bringing the database UP and task trying to write into table
 		// It tries to write into not yet existent table raising various errors, despite goose saying migrations are done (??)
@@ -89,9 +79,9 @@ func TestTask_Integration(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Equal(t, len(jobs), 1)
 
-		assert.Equal(t, jobs[0].Project, task.Project)
-		assert.Equal(t, jobs[0].Spider, task.Spider)
-		assert.Equal(t, jobs[0].Node, task.NodeName)
+		assert.Equal(t, jobs[0].Project, createdTask.Project)
+		assert.Equal(t, jobs[0].Spider, createdTask.Spider)
+		assert.Equal(t, jobs[0].Node, createdTask.NodeName)
 		assert.Equal(t, jobs[0].Status, "scheduled")
 	})
 	t.Run("One time job with error", func(t *testing.T) {
@@ -105,29 +95,19 @@ func TestTask_Integration(t *testing.T) {
 		assert.NilError(t, err)
 
 		taskID := uuid.New()
-		task, err := newTask(
+		createdTask, err := app.newTask(
 			true,
 			&taskID,
-			app.DB.queries,
 			"test_error_task",
 			"test_spider",
 			"test_project_error",
 			"error_node",
-			app.logger,
 			spiderValues,
 			nil,
-			"test_secret",
 		)
 		assert.NilError(t, err)
 
-		jobDef, taskFunc, nameOpt, idOpt, eventOpt := task.newOneTimeJob()
-		_, err = scheduler.NewJob(
-			jobDef,
-			taskFunc,
-			nameOpt,
-			idOpt,
-			eventOpt,
-		)
+		_, err = createdTask.newOneTimeJob()
 		assert.NilError(t, err)
 
 		// Wait for execution (or rather goose to migrate)
@@ -179,29 +159,19 @@ func TestTask_Integration(t *testing.T) {
 		})
 		assert.NilError(t, err)
 		taskID := uuid.New()
-		task, err := newTask(
+		createdTask, err := app.newTask(
 			true,
 			&taskID,
-			app.DB.queries,
 			"test_integration_task",
 			"test_spider",
 			"test_project",
 			"test_node_with_basic_auth",
-			app.logger,
 			spiderValues,
 			nil,
-			app.config.ScrapydEncryptSecret,
 		)
 		assert.NilError(t, err)
 
-		jobDef, taskFunc, nameOpt, idOpt, eventOpt := task.newOneTimeJob()
-		_, err = scheduler.NewJob(
-			jobDef,
-			taskFunc,
-			nameOpt,
-			idOpt,
-			eventOpt,
-		)
+		_, err = createdTask.newOneTimeJob()
 		assert.NilError(t, err)
 		time.Sleep(100 * time.Millisecond)
 		jobs, err := app.DB.queries.GetJobsForNode(context.Background(), database.GetJobsForNodeParams{
@@ -212,9 +182,9 @@ func TestTask_Integration(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Equal(t, len(jobs), 1)
 
-		assert.Equal(t, jobs[0].Project, task.Project)
-		assert.Equal(t, jobs[0].Spider, task.Spider)
-		assert.Equal(t, jobs[0].Node, task.NodeName)
+		assert.Equal(t, jobs[0].Project, createdTask.Project)
+		assert.Equal(t, jobs[0].Spider, createdTask.Spider)
+		assert.Equal(t, jobs[0].Node, createdTask.NodeName)
 		assert.Equal(t, jobs[0].Status, "scheduled")
 	})
 }

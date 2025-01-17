@@ -263,10 +263,9 @@ func TestTaskFire(t *testing.T) {
 		CronString:        "* * * * *",
 	})
 	assert.NilError(t, err)
-	task, err := newTask(false, &databaseTask.ID, ta.DB.queries, "test-task", "test-spider", "test-project",
-		testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+	createdTask, err := ta.newTask(false, &databaseTask.ID, "test-task", "test-spider", "test-project", testNode.Nodename, url.Values{}, nil)
 	assert.NilError(t, err)
-	_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+	_, err = createdTask.newCronJob("* * * * *")
 	assert.NilError(t, err)
 	code, _, _ := ts.postForm(t, "/fire-task/"+databaseTask.ID.String(), nil)
 	assert.NilError(t, err)
@@ -299,10 +298,10 @@ func TestStopTask(t *testing.T) {
 		CronString:        "* * * * *",
 	})
 	assert.NilError(t, err)
-	task, err := newTask(false, &databaseTask.ID, ta.DB.queries, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
-		testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+	createdTask, err := ta.newTask(false, &databaseTask.ID, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
+		testNode.Nodename, url.Values{}, nil)
 	assert.NilError(t, err)
-	_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+	_, err = createdTask.newCronJob("* * * * *")
 	assert.NilError(t, err)
 	assert.Equal(t, len(ta.scheduler.Jobs()), 1)
 	req, err := http.NewRequest(http.MethodDelete, ts.URL+"/stop-task/"+databaseTask.ID.String(), nil)
@@ -314,8 +313,8 @@ func TestStopTask(t *testing.T) {
 	assert.NilError(t, err)
 	updatedTask, err := ta.DB.queries.GetTaskWithUUID(context.Background(), databaseTask.ID)
 	assert.NilError(t, err)
-	assert.Equal(t, updatedTask.ID, task.ID)
-	assert.Equal(t, updatedTask.Project, task.Project)
+	assert.Equal(t, updatedTask.ID, createdTask.ID)
+	assert.Equal(t, updatedTask.Project, createdTask.Project)
 	assert.Equal(t, updatedTask.Paused, true)
 	assert.Equal(t, strings.TrimSpace(string(readBody)), fmt.Sprintf(`<p>Stopped Task with UUID %s</p>`, databaseTask.ID.String()))
 	assert.Equal(t, resp.Header.Get("HX-Refresh"), strconv.FormatBool(true))
@@ -346,10 +345,9 @@ func TestDeleteTask(t *testing.T) {
 		CronString:        "* * * * *",
 	})
 	assert.NilError(t, err)
-	task, err := newTask(false, &databaseTask.ID, ta.DB.queries, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
-		testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+	createdTask, err := ta.newTask(false, &databaseTask.ID, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project, testNode.Nodename, url.Values{}, nil)
 	assert.NilError(t, err)
-	_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+	_, err = createdTask.newCronJob("* * * * *")
 	assert.NilError(t, err)
 	assert.Equal(t, len(ta.scheduler.Jobs()), 1)
 	req, err := http.NewRequest(http.MethodDelete, ts.URL+"/delete-task/"+databaseTask.ID.String(), nil)
@@ -399,10 +397,9 @@ func TestDoBulkAction(t *testing.T) {
 			CronString:        "* * * * *",
 		})
 		assert.NilError(t, err)
-		task, err := newTask(false, &databaseTask.ID, ta.DB.queries, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
-			testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+		createdTask, err := ta.newTask(false, &databaseTask.ID, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project, testNode.Nodename, url.Values{}, nil)
 		assert.NilError(t, err)
-		_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+		_, err = createdTask.newCronJob("* * * * *")
 		assert.NilError(t, err)
 		createdTasks = append(createdTasks, databaseTask)
 	}
@@ -468,14 +465,13 @@ func TestUpdateTask(t *testing.T) {
 		CronString:        "* * * * *",
 	})
 	assert.NilError(t, err)
-	task, err := newTask(false, &databaseTask.ID, ta.DB.queries, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
-		testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+	createdTask, err := ta.newTask(false, &databaseTask.ID, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project, testNode.Nodename, url.Values{}, nil)
 	assert.NilError(t, err)
-	_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+	_, err = createdTask.newCronJob("* * * * *")
 	assert.NilError(t, err)
 	assert.Equal(t, len(ta.scheduler.Jobs()), 1)
 	t.Run("GET tasks update page", func(t *testing.T) {
-		code, _, body := ts.get(t, "/task/edit/"+task.ID.String())
+		code, _, body := ts.get(t, "/task/edit/"+createdTask.ID.String())
 		assert.Equal(t, code, http.StatusOK)
 		assert.StringContains(t, body, databaseTask.ID.String())
 		assert.StringContains(t, body, databaseTask.Name.String)
@@ -485,7 +481,7 @@ func TestUpdateTask(t *testing.T) {
 		assert.StringContains(t, body, databaseTask.CronString)
 	})
 	t.Run("POST update tasks", func(t *testing.T) {
-		code, _, body := ts.get(t, "/task/edit/"+task.ID.String())
+		code, _, body := ts.get(t, "/task/edit/"+createdTask.ID.String())
 		assert.Equal(t, code, http.StatusOK)
 		gotCSRFToken := extractCSRFToken(t, body)
 		formValues := url.Values{
@@ -496,9 +492,9 @@ func TestUpdateTask(t *testing.T) {
 			"cron_input": {"*/10 * * * *"},
 			"fireNode":   {testNode.Nodename},
 		}
-		code, _, _ = ts.postFormFollowRedirects(t, "/task/edit/"+task.ID.String(), formValues)
+		code, _, _ = ts.postFormFollowRedirects(t, "/task/edit/"+createdTask.ID.String(), formValues)
 		assert.Equal(t, code, http.StatusOK)
-		updatedDatabaseTask, err := ta.DB.queries.GetTaskWithUUID(context.Background(), task.ID)
+		updatedDatabaseTask, err := ta.DB.queries.GetTaskWithUUID(context.Background(), createdTask.ID)
 		assert.NilError(t, err)
 		assert.Equal(t, updatedDatabaseTask.Name.String, "updated_task")
 		assert.Equal(t, updatedDatabaseTask.Project, "updated_project")
@@ -536,10 +532,9 @@ func TestSearchTasks(t *testing.T) {
 			CronString:        "* * * * *",
 		})
 		assert.NilError(t, err)
-		task, err := newTask(false, &databaseTask.ID, ta.DB.queries, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project,
-			testNode.Nodename, ta.logger, url.Values{}, nil, ta.config.ScrapydEncryptSecret)
+		createdTask, err := ta.newTask(false, &databaseTask.ID, databaseTask.Name.String, databaseTask.Spider, databaseTask.Project, testNode.Nodename, url.Values{}, nil)
 		assert.NilError(t, err)
-		_, err = ta.scheduler.NewJob(task.newCronJob("* * * * *"))
+		_, err = createdTask.newCronJob("* * * * *")
 		assert.NilError(t, err)
 		createdTasks = append(createdTasks, databaseTask)
 	}

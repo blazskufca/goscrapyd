@@ -253,13 +253,13 @@ func (app *application) loadTasksOnStart() error {
 		if task.Name.Valid {
 			nameStr = task.Name.String
 		}
-		createdTask, err := newTask(false, &task.ID, app.DB.queries, nameStr, task.Spider, task.Project, task.SelectedNodes, app.logger, values, nil, app.config.ScrapydEncryptSecret)
+		createdTask, err := app.newTask(false, &task.ID, nameStr, task.Spider, task.Project, task.SelectedNodes, values, nil)
 		if err != nil {
 			return err
 		} else if createdTask == nil {
 			return errors.New("failed to load task")
 		}
-		cronJob, err := app.scheduler.NewJob(createdTask.newCronJob(task.CronString))
+		cronJob, err := createdTask.newCronJob(task.CronString)
 		if err != nil {
 			return err
 		}

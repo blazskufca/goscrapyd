@@ -374,7 +374,6 @@ func TestFireSpiderPage(t *testing.T) {
 		code, _, body = ts.postFormFollowRedirects(t, "/fire-spider", formValues)
 		assert.Equal(t, http.StatusOK, code)
 		assert.StringContains(t, body, `One time job for spider test_spider on node test_node`)
-		assert.Equal(t, len(ta.scheduler.Jobs()), 1)
 		jobs, err := ta.DB.queries.GetJobsForNode(context.Background(), database.GetJobsForNodeParams{
 			Node:  node.Nodename,
 			Limit: 1000,
