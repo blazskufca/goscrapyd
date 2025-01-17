@@ -1,0 +1,73 @@
+name: Build Go Binaries
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [amd64, arm64]
+        exclude:
+          - os: windows-latest
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Install cross-compilation tools (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Set CGO flags
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            if [ "${{ matrix.arch }}" = "arm64" ]; then
+              echo "CGO_ENABLED=1" >> $GITHUB_ENV
+              echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+              echo "GOARCH=arm64" >> $GITHUB_ENV
+            else
+              echo "CGO_ENABLED=1" >> $GITHUB_ENV
+              echo "GOARCH=amd64" >> $GITHUB_ENV
+            fi
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            echo "CGO_ENABLED=1" >> $GITHUB_ENV
+            echo "GOARCH=amd64" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            echo "CGO_ENABLED=1" >> $GITHUB_ENV
+            echo "GOARCH=${{ matrix.arch }}" >> $GITHUB_ENV
+          fi
+
+      - name: Build Binary
+        shell: bash
+        run: |
+          # Set output name based on OS
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            OUTPUT_NAME="goscrapyd-windows-${{ matrix.arch }}.exe"
+          else
+            OUTPUT_NAME="goscrapyd-$(echo ${{ matrix.os }} | sed 's/-latest//')-${{ matrix.arch }}"
+          fi
+          
+          # Build with static linking
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            go build -o $OUTPUT_NAME -ldflags '-extldflags "-static"' ./cmd/web
+          else
+            go build -o $OUTPUT_NAME -ldflags '-linkmode external -extldflags "-static"' ./cmd/web
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: goscrapyd-binaries
+          path: goscrapyd-*
