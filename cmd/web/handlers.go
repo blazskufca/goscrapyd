@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/blazskufca/goscrapyd/internal/database"
 	"github.com/blazskufca/goscrapyd/internal/request"
 	"github.com/blazskufca/goscrapyd/internal/validator"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/google/uuid"
+	"github.com/robfig/cron/v3"
 	"log/slog"
 	"math"
 	"net/http"
@@ -685,4 +688,87 @@ func (app *application) listVersionsHTMX(w http.ResponseWriter, r *http.Request)
 	templateData["Node"] = node
 	templateData["Project"] = project
 	app.renderHTMX(w, r, http.StatusOK, versionsPageHtmx, nil, "htmx:scrapyd_versions", templateData)
+}
+
+func (app *application) importScrapydWebTimeTasksExport(w http.ResponseWriter, r *http.Request) {
+	ctxwc, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	templateData := app.newTemplateData(r)
+	parsedData, err := parseCSV(r, "scrapydweb_import_data", 10<<20)
+	if err != nil {
+		templateData["ParagraphText"] = err
+		app.renderHTMX(w, r, http.StatusOK, htmxParagraph, nil, "htmx:Paragraph", templateData)
+		return
+	}
+	var successfullyImported []database.Task
+	var hadErrors bool
+	for _, row := range parsedData {
+		var constructedCronString string
+		urlValues := make(url.Values)
+		var nodes []string
+		if hasKeys(row, "minute", "hour", "day", "month", "day_of_week") {
+			for _, key := range []string{"minute", "hour", "day", "month", "day_of_week"} {
+				row[key] = strings.ReplaceAll(row[key], " ", "")
+			}
+			constructedCronString = fmt.Sprintf("%s %s %s %s %s", row["minute"], row["hour"], row["day"], row["month"], row["day_of_week"])
+			_, cronParseErr := cron.ParseStandard(constructedCronString)
+			if cronParseErr != nil {
+				hadErrors = true
+				app.reportServerError(r, cronParseErr)
+				continue
+			}
+		}
+		if hasKeys(row, "settings_arguments") {
+			var tempMap map[string]any
+			if err := json.Unmarshal([]byte(row["settings_arguments"]), &tempMap); err != nil {
+				hadErrors = true
+				app.reportServerError(r, err)
+				continue
+			}
+			for k, v := range tempMap {
+				addToURLValues(urlValues, k, v)
+			}
+		}
+		if hasKeys(row, "selected_node_names") {
+			err = json.Unmarshal([]byte(row["selected_node_names"]), &nodes)
+			if err != nil {
+				hadErrors = true
+				app.reportServerError(r, err)
+				continue
+			}
+		}
+		for _, node := range nodes {
+			randomTaskId, err := uuid.NewRandom()
+			if err != nil {
+				hadErrors = true
+				app.reportServerError(r, err)
+				continue
+			}
+			taskName := row["name"]
+			importedTask, err := app.DB.queries.InsertTask(ctxwc, database.InsertTaskParams{
+				Name:              database.CreateSqlNullString(&taskName),
+				ID:                randomTaskId,
+				Project:           row["project"],
+				Spider:            row["spider"],
+				Jobid:             taskName,
+				SettingsArguments: urlValues.Encode(),
+				SelectedNodes:     node,
+				CronString:        constructedCronString,
+				Paused:            true,
+				CreatedBy:         contextGetAuthenticatedUser(r).ID,
+			})
+			if err != nil {
+				hadErrors = true
+				app.reportServerError(r, err)
+				continue
+			}
+			successfullyImported = append(successfullyImported, importedTask)
+		}
+	}
+	if hadErrors {
+		templateData["ParagraphText"] = fmt.Sprintf("Imported %d tasks(s)! Some failed to import see logs for more info", len(successfullyImported))
+	} else {
+		templateData["ParagraphText"] = fmt.Sprintf("Succefully imported %d task(s)", len(successfullyImported))
+	}
+	app.renderHTMX(w, r, http.StatusOK, htmxParagraph, nil, "htmx:Paragraph", templateData)
 }

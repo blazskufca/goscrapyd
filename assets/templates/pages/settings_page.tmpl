@@ -51,8 +51,7 @@
         <p id="helper-text-node-name" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Default name for your project when deployed</p>
     </div>
 
-    <!-- Spider Settings Section -->
-    <div>
+    <div class="mb-5">
         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Additional Arguments:</label>
         <div id="extra-arguments" class="space-y-4">
             {{range $key, $values := .Settings}}
@@ -92,13 +91,52 @@
             Add Argument
         </button>
     </div>
-
     <button
             type="submit"
-            class="mt-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            class="mb-5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
     >
         Save Settings
     </button>
 </form>
+<div class="max-w-full mx-auto mb-5">
+    <div id="importResults" class="hidden"></div>
+
+    <form hx-encoding='multipart/form-data'
+          hx-post='/upload-exported-data'
+          _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100'
+          class="space-y-6"
+          hx-target="#importResults"
+          hx-swap="outerHTML">
+
+        <input type="hidden" name="csrf_token" value="{{.Token}}">
+
+        <div class="relative z-0 w-full mb-5 group">
+            <label for="scrapydweb_export_data" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Exported Data:
+            </label>
+            <input type='file'
+                   name='scrapydweb_import_data'
+                   id="scrapydweb_export_data"
+                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400">
+            <p id="scrapydweb_export_data-helper" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Import timer tasks exported from <a href="https://github.com/my8100/scrapydweb" class="text-blue-600 hover:underline dark:text-blue-500">ScrapydWeb</a>.
+                Expects data in CSV format. <i>(<a href="https://stackoverflow.com/questions/6076984/sqlite-how-do-i-save-the-result-of-a-query-as-a-csv-file"><u>Export sqlite to CSV instructions</u></a>)</i>
+            </p>
+        </div>
+
+        <div>
+            <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                Upload
+            </button>
+        </div>
+
+        <div class="relative pt-1">
+            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                <div id="progress" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
 <script src="/ui/static/js/dynamic_form.min.js"></script>
 {{end}}

@@ -1,16 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"github.com/blazskufca/goscrapyd/internal/assert"
 	"github.com/blazskufca/goscrapyd/internal/database"
 	"io"
+	"maps"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -461,6 +465,309 @@ func TestDecrypt(t *testing.T) {
 			}
 			assert.NilError(t, err)
 			assert.Equal(t, decrypted, testCase.encryptedValue)
+		})
+	}
+}
+
+func TestParseCSV(t *testing.T) {
+	tests := []struct {
+		name        string
+		csvContent  string
+		fileName    string
+		contentType string
+		maxMemory   int64
+		want        []map[string]string
+		wantErr     bool
+		errMsg      string
+	}{
+		{
+			name: "Valid CSV",
+			csvContent: `name,age,city
+John,30,New York
+Alice,25,Los Angeles`,
+			fileName:    "file",
+			contentType: "text/csv",
+			maxMemory:   1024 * 1024,
+			want: []map[string]string{
+				{"name": "John", "age": "30", "city": "New York"},
+				{"name": "Alice", "age": "25", "city": "Los Angeles"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty CSV",
+			csvContent: `name,age,city
+`,
+			fileName:    "file",
+			contentType: "text/csv",
+			maxMemory:   1024 * 1024,
+			want:        []map[string]string{},
+			wantErr:     false,
+		},
+		{
+			name: "Invalid Content Type",
+			csvContent: `name,age,city
+John,30,New York`,
+			fileName:    "file",
+			contentType: "text/plain",
+			maxMemory:   1024 * 1024,
+			want:        nil,
+			wantErr:     true,
+			errMsg:      "invalid file type: expected csv, got text/plain",
+		},
+		{
+			name: "Single Column CSV",
+			csvContent: `name
+John
+Alice`,
+			fileName:    "file",
+			contentType: "text/csv",
+			maxMemory:   1024 * 1024,
+			want: []map[string]string{
+				{"name": "John"},
+				{"name": "Alice"},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+
+			part, err := writer.CreateFormFile(tt.fileName, "test.csv")
+			if err != nil {
+				t.Fatalf("Failed to create form file: %v", err)
+			}
+			_, err = part.Write([]byte(tt.csvContent))
+			assert.NilError(t, err)
+			err = writer.Close()
+			assert.NilError(t, err)
+
+			req := httptest.NewRequest(http.MethodPost, "/upload", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+
+			if tt.contentType != "" {
+				err = req.ParseMultipartForm(tt.maxMemory)
+				assert.NilError(t, err)
+
+				_, fh, err := req.FormFile(tt.fileName)
+				if err == nil {
+					fh.Header.Set("Content-Type", tt.contentType)
+				}
+			}
+
+			got, err := parseCSV(req, tt.fileName, tt.maxMemory)
+
+			if tt.wantErr {
+				assert.NotEqual(t, err, nil)
+				assert.Equal(t, err.Error(), tt.errMsg)
+				return
+			}
+			assert.NilError(t, err)
+			assert.Equal(t, len(got), len(tt.want))
+			for i := 0; i < len(got); i++ {
+				assert.Equal(t, maps.Equal(got[i], tt.want[i]), true)
+			}
+		})
+	}
+}
+
+func TestHasKeys(t *testing.T) {
+	tests := []struct {
+		name string
+		m    map[string]string
+		keys []string
+		want bool
+	}{
+		{
+			name: "Empty map and no keys",
+			m:    map[string]string{},
+			keys: []string{},
+			want: true,
+		},
+		{
+			name: "Empty map with keys",
+			m:    map[string]string{},
+			keys: []string{"name"},
+			want: false,
+		},
+		{
+			name: "Map with single matching key",
+			m:    map[string]string{"name": "John"},
+			keys: []string{"name"},
+			want: true,
+		},
+		{
+			name: "Map with multiple matching keys",
+			m: map[string]string{
+				"name": "John",
+				"age":  "30",
+				"city": "New York",
+			},
+			keys: []string{"name", "age"},
+			want: true,
+		},
+		{
+			name: "Map with one missing key",
+			m: map[string]string{
+				"name": "John",
+				"age":  "30",
+			},
+			keys: []string{"name", "country"},
+			want: false,
+		},
+		{
+			name: "Map with all missing keys",
+			m: map[string]string{
+				"name": "John",
+				"age":  "30",
+			},
+			keys: []string{"country", "city"},
+			want: false,
+		},
+		{
+			name: "Nil map",
+			m:    nil,
+			keys: []string{"name"},
+			want: false,
+		},
+		{
+			name: "Map with empty string key",
+			m: map[string]string{
+				"":    "empty",
+				"age": "30",
+			},
+			keys: []string{"", "age"},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasKeys(tt.m, tt.keys...)
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func TestAddToURLValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    any
+		initial  url.Values
+		expected url.Values
+	}{
+		{
+			name:     "String value",
+			key:      "name",
+			value:    "John",
+			initial:  make(url.Values),
+			expected: url.Values{"name": []string{"John"}},
+		},
+		{
+			name:     "Float value",
+			key:      "price",
+			value:    123.45,
+			initial:  make(url.Values),
+			expected: url.Values{"price": []string{"123.45"}},
+		},
+		{
+			name:     "Boolean true value",
+			key:      "active",
+			value:    true,
+			initial:  make(url.Values),
+			expected: url.Values{"active": []string{"true"}},
+		},
+		{
+			name:     "Boolean false value",
+			key:      "active",
+			value:    false,
+			initial:  make(url.Values),
+			expected: url.Values{"active": []string{"false"}},
+		},
+		{
+			name:     "Array of strings",
+			key:      "tags",
+			value:    []any{"tag1", "tag2", "tag3"},
+			initial:  make(url.Values),
+			expected: url.Values{"tags": []string{"tag1", "tag2", "tag3"}},
+		},
+		{
+			name:     "Array of mixed types",
+			key:      "values",
+			value:    []any{"string", 123.45, true},
+			initial:  make(url.Values),
+			expected: url.Values{"values": []string{"string", "123.45", "true"}},
+		},
+		{
+			name:     "Empty array",
+			key:      "empty",
+			value:    []any{},
+			initial:  make(url.Values),
+			expected: url.Values{},
+		},
+		{
+			name:     "Append to existing value",
+			key:      "tags",
+			value:    "tag2",
+			initial:  url.Values{"tags": []string{"tag1"}},
+			expected: url.Values{"tags": []string{"tag1", "tag2"}},
+		},
+		{
+			name:     "Append array to existing value",
+			key:      "tags",
+			value:    []any{"tag2", "tag3"},
+			initial:  url.Values{"tags": []string{"tag1"}},
+			expected: url.Values{"tags": []string{"tag1", "tag2", "tag3"}},
+		},
+		{
+			name:     "Integer value",
+			key:      "count",
+			value:    42,
+			initial:  make(url.Values),
+			expected: url.Values{"count": []string{"42"}},
+		},
+		{
+			name:     "Empty string value",
+			key:      "empty",
+			value:    "",
+			initial:  make(url.Values),
+			expected: url.Values{"empty": []string{""}},
+		},
+		{
+			name:     "Nil value",
+			key:      "nil",
+			value:    nil,
+			initial:  make(url.Values),
+			expected: url.Values{"nil": []string{"<nil>"}},
+		},
+		{
+			name:     "Multiple operations on same key",
+			key:      "multi",
+			value:    []any{"value1", 123, "value2"},
+			initial:  url.Values{"multi": []string{"existing"}},
+			expected: url.Values{"multi": []string{"existing", "value1", "123", "value2"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values := make(url.Values)
+			for k, v := range tt.initial {
+				values[k] = append([]string{}, v...)
+			}
+
+			addToURLValues(values, tt.key, tt.value)
+
+			if !reflect.DeepEqual(values, tt.expected) {
+				t.Errorf("addToURLValues() got = %v, want %v", values, tt.expected)
+			}
+
+			actualLen, expectedLen := len(values[tt.key]), len(tt.expected[tt.key])
+			assert.Equal(t, actualLen, expectedLen)
 		})
 	}
 }

@@ -44,7 +44,6 @@ func (app *application) routes() http.Handler {
 	mux.Handle("POST /{node}/job/search", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.searchJobs))
 	mux.Handle("GET /versions", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersions))
 	mux.Handle("GET /versions-htmx", appMiddleware.Append(app.requireAuthenticatedUser).ThenFunc(app.listVersionsHTMX))
-	// This should come last because it's the general root route.
 	mux.Handle("GET /", appMiddleware.Append(app.requireAuthenticatedUser).Then(http.RedirectHandler("/list-nodes", http.StatusMovedPermanently)))
 	// Admin only routes
 	mux.Handle("GET /add-node", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.insertNewScrapydNode))
@@ -60,6 +59,7 @@ func (app *application) routes() http.Handler {
 	mux.Handle("POST /node/edit/{node}", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.editNode))
 	mux.Handle("GET /metrics", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.metricsHandler))
 	mux.Handle("GET /metrics/json", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).Then(expvar.Handler()))
+	mux.Handle("POST /upload-exported-data", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.importScrapydWebTimeTasksExport))
 	// Anonymous user routes
 	mux.Handle("GET /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))
 	mux.Handle("POST /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))

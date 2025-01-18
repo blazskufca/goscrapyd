@@ -6,6 +6,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"github.com/blazskufca/goscrapyd/internal/database"
@@ -24,6 +25,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -411,4 +413,73 @@ func sortScrapydNodes(nodes []listScrapydNodesType) []listScrapydNodesType {
 		return 0
 	})
 	return nodes
+}
+
+func parseCSV(r *http.Request, fileName string, maxMemory int64) ([]map[string]string, error) {
+	err := r.ParseMultipartForm(maxMemory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse form: %v", err)
+	}
+	file, formHeader, err := r.FormFile(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file: %v", err)
+	}
+	defer file.Close()
+	if formHeader.Header.Get("Content-Type") != "text/csv" {
+		return nil, fmt.Errorf("invalid file type: expected csv, got %s", formHeader.Header.Get("Content-Type"))
+	}
+	reader := csv.NewReader(file)
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV data: %v", err)
+	}
+
+	header := records[0]
+
+	var result []map[string]string
+	for _, row := range records[1:] {
+		rowMap := make(map[string]string)
+		for i, field := range row {
+			rowMap[header[i]] = field
+		}
+		result = append(result, rowMap)
+	}
+
+	return result, nil
+}
+
+func hasKeys(m map[string]string, keys ...string) bool {
+	for _, k := range keys {
+		if _, ok := m[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func addToURLValues(values url.Values, key string, value any) {
+	strValue := ""
+	switch v := value.(type) {
+	case string:
+		strValue = v
+	case float64:
+		strValue = strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		strValue = strconv.FormatBool(v)
+	case []any:
+		for _, item := range v {
+			addToURLValues(values, key, item)
+		}
+		return
+	default:
+		// Don't know what this would be, hopefully nothing ends up here
+		strValue = fmt.Sprintf("%v", v)
+	}
+
+	if existing, exists := values[key]; exists {
+		values[key] = append(existing, strValue)
+	} else {
+		values.Set(key, strValue)
+	}
 }

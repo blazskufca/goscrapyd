@@ -61,11 +61,11 @@ jobs:
           
           # Build with platform-specific flags
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            go build -o $OUTPUT_NAME -ldflags '-extldflags "-static"' ./cmd/web
+            go build -o $OUTPUT_NAME -ldflags '-s -w -extldflags "-static"' ./cmd/web
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            go build -o $OUTPUT_NAME ./cmd/web
+            go build -o $OUTPUT_NAME -ldflags '-s -w' ./cmd/web
           else
-            go build -o $OUTPUT_NAME -ldflags '-linkmode external -extldflags "-static"' ./cmd/web
+            go build -o $OUTPUT_NAME -ldflags '-s -w -linkmode external -extldflags "-static"' ./cmd/web
           fi
 
       - name: Upload artifacts
