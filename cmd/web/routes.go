@@ -60,6 +60,7 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /metrics", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.metricsHandler))
 	mux.Handle("GET /metrics/json", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).Then(expvar.Handler()))
 	mux.Handle("POST /upload-exported-data", appMiddleware.Append(app.preventCSRF, app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.importScrapydWebTimeTasksExport))
+	mux.Handle("GET /debug/pprof/", appMiddleware.Append(app.requireAuthenticatedUser, app.requirePermission).ThenFunc(app.pprofHandler))
 	// Anonymous user routes
 	mux.Handle("GET /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))
 	mux.Handle("POST /login", appMiddleware.Append(app.preventCSRF, app.requireAnonymousUser).ThenFunc(app.login))
