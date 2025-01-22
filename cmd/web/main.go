@@ -99,6 +99,7 @@ type config struct {
 	DefaultTimeout       time.Duration
 	ScrapydEncryptSecret string
 	autoUpdateNodes      string
+	timezone             string
 }
 
 type application struct {
@@ -148,14 +149,26 @@ func run(logger *slog.Logger) error {
 	flag.BoolVar(&cfg.db.autoMigrate, "auto-migrate", true, "Automatically migrate the database")
 	flag.BoolVar(&cfg.db.createDefaultUser, "create-default-user", false, "Create admin:admin user on startup (useful for first startup so you can login. Don't forget to create legit users afterwards and delete this insecure one)")
 	flag.StringVar(&cfg.autoUpdateNodes, "auto-update-interval", "*/10 * * * *", "Updates jobs info for all the nodes in the background on a given schedule. Expects CRON string.")
+	flag.StringVar(&cfg.timezone, "timezone", "", "If set, cron schedules will account for selected timezone. If not set time.Local (https://pkg.go.dev/time#Local) is used!")
 	showVersion := flag.Bool("version", false, "display version and exit")
 	flag.Parse()
-
+	var timeLocal *time.Location
 	if *showVersion {
 		fmt.Printf("version: %s\n", version.Get())
 		return nil
 	}
+	if cfg.timezone != "" {
+		loc, err := time.LoadLocation(cfg.timezone)
+		if err != nil {
+			log.Fatal(err)
+		}
+		timeLocal = loc
+		time.Local = loc
 
+	} else {
+		timeLocal = time.Local
+	}
+	log.Println("Using timezone:", time.Local)
 	_, err := cron.ParseStandard(cfg.autoUpdateNodes)
 	if err != nil {
 		log.Fatalln(err)
@@ -209,7 +222,7 @@ func run(logger *slog.Logger) error {
 		ErrorLog:      slog.NewLogLogger(app.logger.Handler(), slog.LevelError),
 		ErrorHandler:  app.reverseProxyErrHandler,
 	}
-	s, err := gocron.NewScheduler(gocron.WithLogger(app.logger))
+	s, err := gocron.NewScheduler(gocron.WithLogger(app.logger), gocron.WithLocation(timeLocal))
 	if err != nil {
 		log.Fatalln(err)
 	}
