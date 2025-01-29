@@ -1,9 +1,9 @@
 module github.com/blazskufca/goscrapyd
 
-go 1.23.4
+go 1.24.1
 
 require (
-	github.com/go-co-op/gocron/v2 v2.14.2
+	github.com/go-co-op/gocron/v2 v2.16.1
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
@@ -16,12 +16,12 @@ require (
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
-	github.com/wneessen/go-mail v0.6.1
-	golang.org/x/crypto v0.32.0
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
-	golang.org/x/sync v0.10.0
-	golang.org/x/text v0.21.0
-	golang.org/x/time v0.9.0
+	github.com/wneessen/go-mail v0.6.2
+	golang.org/x/crypto v0.36.0
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
+	golang.org/x/sync v0.12.0
+	golang.org/x/text v0.23.0
+	golang.org/x/time v0.11.0
 )
 
 require (
@@ -33,5 +33,5 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
 )
