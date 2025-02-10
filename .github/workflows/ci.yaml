@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.5'
+          go-version: '1.23.6'
 
       - name: Run Go Format
         run: test -z $(go fmt ./...)
@@ -41,7 +41,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.5'
+          go-version: '1.23.6'
 
       - name: Install gosec
         run: go install github.com/securego/gosec/v2/cmd/gosec@latest
