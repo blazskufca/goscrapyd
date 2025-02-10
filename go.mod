@@ -17,10 +17,10 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/wneessen/go-mail v0.6.1
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.33.0
 	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
 	golang.org/x/sync v0.11.0
-	golang.org/x/text v0.21.0
+	golang.org/x/text v0.22.0
 	golang.org/x/time v0.10.0
 )
 
