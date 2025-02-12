@@ -1,6 +1,6 @@
 module github.com/blazskufca/goscrapyd
 
-go 1.23.6
+go 1.24
 
 require (
 	github.com/go-co-op/gocron/v2 v2.15.0
@@ -18,7 +18,7 @@ require (
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/wneessen/go-mail v0.6.1
 	golang.org/x/crypto v0.33.0
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
 	golang.org/x/sync v0.11.0
 	golang.org/x/text v0.22.0
 	golang.org/x/time v0.10.0
@@ -33,5 +33,5 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
 )
