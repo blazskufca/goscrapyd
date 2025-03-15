@@ -1,6 +1,6 @@
 module github.com/blazskufca/goscrapyd
 
-go 1.24
+go 1.24.1
 
 require (
 	github.com/go-co-op/gocron/v2 v2.16.0
