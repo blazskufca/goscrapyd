@@ -3,6 +3,10 @@ name: Build Go Binaries
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build:
     name: Build for ${{ matrix.os }}-${{ matrix.arch }}
