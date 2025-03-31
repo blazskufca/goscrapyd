@@ -1,7 +1,6 @@
 module github.com/blazskufca/goscrapyd
 
 go 1.24.1
-
 require (
 	github.com/go-co-op/gocron/v2 v2.16.1
 	github.com/go-playground/form/v4 v4.2.1
@@ -33,5 +32,5 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 )
