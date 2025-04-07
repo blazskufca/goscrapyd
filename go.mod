@@ -1,6 +1,7 @@
 module github.com/blazskufca/goscrapyd
 
 go 1.24.1
+
 require (
 	github.com/go-co-op/gocron/v2 v2.16.1
 	github.com/go-playground/form/v4 v4.2.1
@@ -10,7 +11,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/justinas/nosurf v1.1.1
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/robfig/cron/v3 v3.0.1
