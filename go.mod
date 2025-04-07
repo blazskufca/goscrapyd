@@ -1,6 +1,7 @@
 module github.com/blazskufca/goscrapyd
 
 go 1.24.1
+
 require (
 	github.com/go-co-op/gocron/v2 v2.16.1
 	github.com/go-playground/form/v4 v4.2.1
@@ -18,7 +19,7 @@ require (
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.13.0
 	golang.org/x/text v0.23.0
 	golang.org/x/time v0.11.0
 )
