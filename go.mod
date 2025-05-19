@@ -3,7 +3,7 @@ module github.com/blazskufca/goscrapyd
 go 1.24.1
 
 require (
-	github.com/go-co-op/gocron/v2 v2.16.1
+	github.com/go-co-op/gocron/v2 v2.16.2
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
