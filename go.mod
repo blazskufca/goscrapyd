@@ -11,17 +11,17 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/justinas/nosurf v1.2.0
-	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/mattn/go-sqlite3 v1.14.29
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/wneessen/go-mail v0.6.2
-	golang.org/x/crypto v0.39.0
+	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
-	golang.org/x/sync v0.15.0
-	golang.org/x/text v0.26.0
 	golang.org/x/time v0.12.0
+	golang.org/x/sync v0.16.0
+	golang.org/x/text v0.27.0
 )
 
 require (
@@ -33,5 +33,5 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
 )
