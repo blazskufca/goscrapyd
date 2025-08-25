@@ -13,12 +13,12 @@ require (
 	github.com/justinas/nosurf v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.29
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/pressly/goose/v3 v3.24.3
+	github.com/pressly/goose/v3 v3.25.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/sync v0.16.0
 	golang.org/x/text v0.28.0
 	golang.org/x/time v0.12.0
